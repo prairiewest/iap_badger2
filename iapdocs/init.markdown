@@ -50,8 +50,6 @@ The options table can contain the following values:
 
 **verboseDebugOutput** - set to **true** to output lots of debugging information to the console 
 
-**usingOldGoogle** - set to **true** if you're using an old build of Corona (earlier than 2017.3105) and don't need to worry about asynchronous changes to store.init.  Since version 9, IAP Badger can auto-detect this, but it's left if you want to set it manually for testing purposes.
-
 **handleInvalidProductIDs** (optional) - set to true to ignore invalid product IDs during a purchase or restore event.  This can be useful if a product ID for an app has been changed/deleted, but some users bought the product in the past (probably during testing) and the product ID doggedly appears in restore cycles.  IAP Badger will tell the store the item has been successfully processed, but in reality this zombie IAP been ignored.  The default value for this flag false.
 
 **googleConvertOwnedPurchaseEvents** (optional) - Google Play returns 'purchase failed' events when a user attempts to re-purchase a non-consumable they've already paid for in the past.  Since version 18, IAP Badger will convert these failed events into successful ones, mimicking the purchase flow seen in iOS.  To turn off this behaviour, set this flag to false.  By default, it. will be set to true.  (Note: technically, this situation cannot arise if you follow Google's recommendations and initiate [iap_badger.restore()](restore.markdown) when your app starts.  This feature offers back-up functionality that catches the problem when it occurs.)

@@ -1,7 +1,5 @@
 # iap_badger: Plugin API Docs
 
-*I don't make any charge for the use of IAP Badger - consider it my gift to you!  If you do find this module helpful, it would be amazing if you could download and rate one of [our games](http://happymongoosegames.co.uk) (they're all free to download).*
-
 |                      | &nbsp;
 | -------------------- | ---------------------------------------------------------------
 | __Type__             | [Library](http://docs.coronalabs.com/api/type/Library.html)
@@ -14,24 +12,18 @@
 
 ## What is IAP Badger? (And what will it do for you?)
 
-It's a simplified approach to in-app purchases with Solar2D SDK.
+It's a simplified approach to in-app purchases with Solar2D.
 
-Although Solar2D SDK offers an IAP API that is quite similar across the app stores, there are differences depending on whether you are connecting to Apple's App Store, Google Play or through Amazon.  This can result in spaghetti code that is difficult to maintain.
+Although Solar2D offers an IAP API that is quite similar across the app stores, there are differences depending on whether you are connecting to Apple's App Store, Google Play or through Amazon.  This can result in spaghetti code that is difficult to maintain.
 
 The main benefit of using IAP Badger is you can forget all that.  You write one, simple piece of code that functions across all the app stores.
 
 In terms of program flow and event handling, IAP Badger makes all of the stores appear to follow Apple's purchase and restore model.  For instance, it will automatically handle the consumption of consumable products on Google Play.
 
-## Health warning...
-
-I'm currently in the process of updating this documentation so it references Solar2D rather than Corona SDK.  This is still a work in progress, so in the short term, there may be some references that are out of date.
-
-However... whilst references and links out to Corona SDK's website may be out-dated, the concepts in the documentation are still correct.
-
 
 ## Overview
 
-The iap_badger plugin can be used in your [Solar2D](https://coronalabs.com/products/corona-sdk/) project.  It provides:
+The iap_badger plugin can be used in your [Solar2D](https://solar2d.com/) project.  It provides:
 
 * A simplified set of functions for processing in app purchases (IAP)
 * The ability to write a single piece of IAP code that works across Apple's App Store, Google Play and Amazon.
@@ -43,8 +35,6 @@ The iap_badger plugin can be used in your [Solar2D](https://coronalabs.com/produ
 To get to the simplest possible code for making an IAP purchase, scroll down to **Sample code (simplest possible IAP purchase)**.
 
 IAP Badger is wrapper class written in pure lua for Solar2D's store libraries and the Google and Amazon plug-ins.
-
-To find our about latest changes, and to ask questions about IAP Badger, [use this forum on Solar2D's website](https://forums.solar2d.com/t/iap-badger-a-unified-approach-to-in-app-purchases/149194).
 
 
 ## Syntax
@@ -86,29 +76,16 @@ To find our about latest changes, and to ask questions about IAP Badger, [use th
 
 ## Project Configuration
 
-### Solar2D Plugin
+To use THIS version of IAP Badger you cannot use the simple plugin method, you must download the code into your project.
 
-To use the library, add an entry for IAP Badger to your 'build.settings' file.
-
-Solar2D will automatically make sure you are using the latest version of the library when you compile your code.
-
-To do this:
-
-* Visit [IAP Badger's Solar2D plugin page](https://www.solar2dplugins.com/plugins/iap-badger)
-* Click the 'build.settings' button
-* Copy the code snippet
-* Paste it into the plugins section of your build.settings file
-
-Then to use the plugin in your code, use:
+To use the plugin in your code:
 
 ```lua
 
-local iap = require("plugin.iap_badger")
+local iap = require("iap_badger")
 
 ```
 
-
-Note: there is also a version of IAP Badger held on a repository at [Github](https://github.com/happymongoose/iap_badger).  If you use include IAP Badger using this approach, download and include the IAP Badger library with the rest of your project files.  If you take this approach, you'll need to manually check you're using the latest version of the software. The code is provided under an MIT license, so you're free to fork it and do what you like with it.
 
 
 ## Platform-specific Notes
@@ -126,57 +103,13 @@ To test on a real device, you need to build your app with **a development provis
 
 ###Google Play
 
-[Read this page](https://docs.coronalabs.com/plugin/google-iap-v3/) from Solar2D for more information about setting up IAP for Google Play devices.  I definitely recommend you do this.
+[Read this page](https://docs.coronalabs.com/plugin/google-iap-billing-v2/index.html) from Solar2D for more information about setting up IAP for Google Play devices (required).
 
-First, you will need to [enable the Google IAP plug-in](https://marketplace.coronalabs.com/plugin/google-iap) for your Solar2D account.
+You will need to include a new reference in your **build.settings** file to include the Google IAP plugin for your app (see Solar2D docs).
 
-You will need to include a new reference in your **build.settings** file to include the Google IAP v3 plugin for your app.
+You will also need to enable the **BILLING** permission in **build.settings** (see Solar2D docs).
 
-```lua
-
-    plugins =
-    {
-        --Google in app billing v3
-        ["plugin.google.iap.v3"] =
-        {
-            -- required
-            publisherId = "com.coronalabs",
-            supportedPlatforms = { android = true },
-        },  
-	}
-
-```
-
-You will also need to enable the **BILLING** permission in **build.settings**.
-
-```lua
-
-    android =
-    {
-        usesPermissions =
-        {
-            "com.android.vending.BILLING",
-        },
-    },
-
-```
-
-Your app's key must be added to the license table in **config.lua**.  You will find the key for your app in Google Play Console.
-
-```lua
-
-	application =
-	{
-	    license =
-	    {
-	        google =
-	        {
-	            key = "Your key",
-	        },
-	    },
-	}
-
-```
+Your app's key must be added to the license table in **config.lua**.  You will find the key for your app in Google Play Console (see Solar2D docs).
 
 When working on Google, changes you make in the Developer Console (such as publishing an in-app product) can take several hours to propagate around their servers.  Don't expect to add/change products and see immediate changes on your device.
 
@@ -202,7 +135,7 @@ local catalogue = {
         promoCoins = {
                 --A list of product names or identifiers specific to apple's App Store or Google Play.
                 productNames = {
-                	google="uk.co.happymongoose.promocoins",
+                    google="com.example.iap.promocoins",
                 },
                 --The product type
                 productType = "consumable"
@@ -219,27 +152,10 @@ Including **allowRestore** with non-promo products could be a terrible idea... u
 
 ###Amazon
 
-[Read this page](https://docs.coronalabs.com/plugin/amazon-iap-v2/index.html) from Solar2D for more information about setting up IAP for Amazon devices (I definitely recommend you do this).  To test your IAPs, you will need to install the [Amazon App Tester](https://developer.amazon.com/public/apis/earn/in-app-purchasing/docs-v2/installing-and-configuring-app-tester) on your testing device.
+[Read this page](https://docs.coronalabs.com/plugin/amazon-iap-v3/index.html) from Solar2D for more information about setting up IAP for Amazon devices (required). In particular, read the notes about the App Store Auth Key.  To test your IAPs, you will need to install the Amazon App Tester on your testing device.
 
-First, you will need to [enable the Amazon IAP plug-in](https://marketplace.coronalabs.com/plugin/amazon-iap) for your Solar2D account.
+You will need to include a new reference in your **build.settings** file to include the Amazon IAP v3 plugin for your app (see Solar2D docs).
 
-You will also need to include a new reference in your **build.settings** file to include the Amazon IAP v2 plugin for your app.
-
-
-```lua
-
-    plugins =
-    {
-        --Amazon IAP
-        ["plugin.amazon.iap"] =
-        {
-            publisherId = "com.coronalabs",
-            supportedPlatforms = { ["android-kindle"]=true }
-        },
-
-	}
-
-```
 
 ###How to implement IAP quickly
 
@@ -269,11 +185,7 @@ The flow is basically:
 
 Stage 2 is all about following tutorials for setting up IAP in each developer console slowly and meticulously.  Don't assume anything, read everything twice and don't miss out a single step.  Put aside three times as much time as you'll think you'll need.
 
-Tutorials about setting up in-app products in the developer consoles can be found here:
-
-* iOS: [IAP configuration guide](https://help.apple.com/itunes-connect/developer/#/devb57be10e7), [the setup section of Solar2D's IAP guide](https://docs.coronalabs.com/guide/monetization/IAP/index.html#setup), [Solar2D's guide to creating certificates/provisioning profiles](https://docs.coronalabs.com/guide/distribution/iOSBuild/index.html)
-* Google Play: [administering IAP](https://developer.android.com/google/play/billing/billing_admin.html), [testing in-app purchases](https://developer.android.com/google/play/billing/billing_testing.html)
-* Amazon: [creating new in-app purchases](https://developer.amazon.com/public/apis/earn/in-app-purchasing/docs-v2/submitting-iap-items), [testing in-app purchases](https://developer.amazon.com/public/apis/earn/in-app-purchasing/docs-v2/testing-iap)
+Links to tutorials about setting up in-app products in the developer consoles can be found in the Solar2D official docs.
 
 At the risk of repeating myself: read them, read them again, then read them another 15 times.  You'll need to follow every single step, super-meticulously, to get IAP to work.
 
@@ -383,7 +295,6 @@ Both of these examples assume you are using the plug-in version of IAP Badger on
 
 Using IAP Badger to purchase an IAP for removing advertisements from an app, including all UI code.  Also includes a restore products function.
 
-The full example project can be downloaded [here](http://happymongoosegames.co.uk/iapdocs/example%202.zip).
 
 ```Lua
 
@@ -631,7 +542,6 @@ end
 
 Using IAP Badger to purchase a two consumable in-app products (coin packs of different sizes), including full UI.
 
-The full example project can be downloaded [here](http://happymongoosegames.co.uk/iapdocs/example%203.zip).
 
 
 ```Lua
@@ -803,10 +713,7 @@ coinText:setFillColor(1,1,0)
 
 ### Support
 
-More support is available from the Happy Mongoose Company:
-
-* [E-mail](mailto://simon@happymongoose.co.uk)
-* [Plugin Publisher](http://www.happymongoose.co.uk)
+No support is provided or implied.
 
 
 ## Compatibility
@@ -854,88 +761,3 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-## Change log / updates
-
-### Solar2D
-
-Version 18 (July 21st 2020)
-* ported to Solar2D marketplace
-* updated documentation
-
-### Corona SDK
-
-Version 18 (Aug 12th 2019)
-* purchases on Google Store that fail because the user already owns the specified item are now converted into standard purchase events (to replicate behaviour on iOS).  This can be turned on/off with the googleConvertOwnedPurchaseEvents flag during initialisation
-* On Android, warnings given if no build store has been selected in the Solar2D build dialog
-
-Version 17 (Can't remember!)
-* corrected declaration of emptyInventoryOfNonConsumableItems
-
-Version 16 (Oct 14th 2018)
-* documentation updated - more detailed added to setCancelledListener and setFailedListener descriptions
-
-Version 16 (Aug 2nd 2018)
-* documentation change - simplified example code
-
-Version 16 (May 27th 2018)
-* fixed checkProductExists bug (thanks to bogomazon)
-
-Version 15 (November 12th 2017)
-* Bug fixes
-* Library no longer crashes when the user attempts to purchase/restore and they're not logged into the App Store on an iOS device
-
-Version 14 (November 11th 2017)
-* Fixed bug introduced in version 12 on Android devices that mishandled failed/cancelled events
-* Better handling (and improved consistency between devices) of transaction receipts
-
-Version 13 (October 12th 2017)
-* Fixed bug introduced in version 12 that would make cancelled or failed restores in debug mode fail
-* Fixed bug introduced in version 12 that would affect standard restores in debug mode
-
-Version 12 (October 7th 2017)
-* added switch to ignore unknown product codes on purchase/restore - **handleInvalidProductIDs**
-* downgraded invalid product IDs from an error that halts execution to a printed error to terminal
-* added switch in catalogue to allow restore of individual consumable products (set **allowRestore** to true) - note that this item will now be included when running a restore cycle in debug mode
-* removed some of instructional comments from the source code (out of date and better documentation available on http://happymongoose.co.uk anyway
-* improved some debug output detail on verboseDebugOutput
-* fixed incorrect error messages on consumption events on Google Play
-
-Version 11 (August 10th 2017)
-* fixed loadProducts not working correctly on simulator (when not passed a callback function)
-
-Version 10 (August 9th 2017)
-* fixed crash bug introduced by verboseDebugOutput when testing cancelled/failed restores on the simulator
-
-Version 9 (August 6th 2017):
-* library now automatically checks Solar2D build version to see how to interact with Google IAP v3 (so no need to explicitly set usingOldGoogle flag unless you want to)
-* added verboseDebugOutput flag to init function (set this to true to get loads of debugging info about your app).
-
-Version 8 (July 26th 2017):
-* updated for Google IAP update (store.init now asynchronous)
-* added getVersion, consumeAllPurchases and printLoadProductsCatalogue() functions
-* improved handling of loadProducts in debug mode or on the simulator, so it better simulates the delay experienced on a real device
-* updated documentation and tutorial to reflect latest changes
-
-Version 7:
-* decoupled inventory handling from IAP handling
-
-Version 6:
-* loadProducts - fixed user listener not being called correctly (again)
-* loadProducts - for convenience, the user listener is now called with (raw product data, loadProductsCatalogue) on device;
-*                   ({}, loadProductsCatalogue) on simulator.
-
-Version 5:
-* fix to getLoadProductsFinished when running in debug mode
-
-Version 4:
-* removed reference to stores.availableStores.apple
-
-Version 3:
-* fixed store loading (defaulting to Apple) on non-iOS devices
-
-Version 2:
-* support added for Amazon IAP v2
-* removed generateAmazonJSON() function as it is no longer required (JSON testing file can now be downloaded from Amazon's website)
-* fixed null productID passed on fake cancelled/failed restore events
-* changes to loadInventory and saveInventory to add ability to load and save directly from a string instead of a device file (to allow for cloud saving etc.)
-* added getLoadProductsFinished() - returns true if loadProducts has received information back from the store, false if loadProducts still waiting, nil if loadProducts never called
