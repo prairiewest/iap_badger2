@@ -1,6 +1,3 @@
--- Supported values for orientation:
--- portrait, portraitUpsideDown, landscapeLeft, landscapeRight
-
 settings = {
 	
 	orientation = {
@@ -8,44 +5,33 @@ settings = {
 		supported = { "portrait", }
 	},
 	
-	iphone = {
-		plist = {
-			UIStatusBarHidden = false,
-			UIPrerenderedIcon = true, -- set to false for "shine" overlay
-			--UIApplicationExitsOnSuspend = true, -- uncomment to quit app on suspend
-
-            --[[
-            -- iOS app URL schemes:
-            CFBundleURLTypes =
-            {
-                {
-                    CFBundleURLSchemes =
-                    {
-                        "fbXXXXXXXXXXXXXX", -- example scheme for facebook
-                        "coronasdkapp", -- example second scheme
-                    }
-                }
-            }
-            --]]
-		}
-	},
-	
-        plugins =
-        {
-            --Google in app billing v3
-            ["plugin.google.iap.v3"] =
-            {
-                -- required
-                publisherId = "com.coronalabs",
-                supportedPlatforms = { android = true },
-            },  
-        
+    iphone = {
+        xcassets = "Images.xcassets",
+        plist = {
+            UIStatusBarHidden = true,
+            UILaunchStoryboardName = "LaunchScreen",
+            ITSAppUsesNonExemptEncryption = false,
+            CFBundleLocalizations = {
+                "en"
+            },
         },
+    },
+	
+    plugins =
+    {
+        ["plugin.apple.iap"] = {
+            publisherId = "com.coronalabs"
+        },
+        ["plugin.amazon.iap.v3"] = {
+            publisherId = "com.solar2d"
+        },
+    },
     
-    -- Android permissions
-
-	androidPermissions = {
-  		"android.permission.BILLING",
-  	},
+    android =
+    {
+        usesPermissions = {
+            "com.android.vending.BILLING",
+        },
+    },
 
 }
