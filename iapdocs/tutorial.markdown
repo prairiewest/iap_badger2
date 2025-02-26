@@ -47,9 +47,9 @@ local catalogue = {
         removeAds = {
                 --A list of product names or identifiers specific to apple's App Store or Google Play.
                 productNames = {
-                	apple="full product ID as entered in iTunes Connect",
-                	google="full product ID as entered in Google Play console",
-                	amazon="full product ID as entered into Amazon's console"
+                    apple="com.example.iap.product1",
+                    google="com.example.iap.product1",
+                    amazon="com.example.iap.product1"
                 },
                 --The product type
                 productType = "non-consumable"
@@ -147,14 +147,6 @@ In this example, we create a product called *removeAds*.  In the future, wheneve
 The first item in *removeAds* is the *productNames* table.  This contains a list of product identifiers that correspond to how your removeAds product has been set in iTunes Connect, Google Play, Amazon etc.  This table allows your product to have different names in different app stores.  In the example above, our *remove_ads* product has been given the identifier *remove_ads* in iTunes Connect, but has the name *REMOVE_BANNER* in Google Play.  When you tell IAP Badger that you want to purchase *removeAds*, it will automatically work out the correct identifier based on the user's device.
 
 *(Note that setting up products on Google Play, Amazon, iTunes Connect et al is beyond the scope of this tutorial).*
-
-However, tutorials about setting up in-app products in the developer consoles can be found here:
-
-* iOS: [IAP configuration guide](https://help.apple.com/itunes-connect/developer/#/devb57be10e7)
-* Google Play: [administering IAP](https://developer.android.com/google/play/billing/billing_admin.html), [testing in-app purchases](https://developer.android.com/google/play/billing/billing_testing.html)
-* Amazon: [creating new in-app purchases](https://developer.amazon.com/public/apis/earn/in-app-purchasing/docs-v2/submitting-iap-items), [testing in-app purchases](https://developer.amazon.com/public/apis/earn/in-app-purchasing/docs-v2/testing-iap)
-
-(Read them, read them again, then read them another 15 times.  Seriously.  You'll need to follow every single step, super-meticulously, to get IAP to work.)
 
 The *product_type* value can be one of two values: **consumable** or **non-consummable**.  **consumable** items are like gold coins in a game that can be purchased and then spent, or used up.  The user can purchase and re-purchase consumable items to their hearts content.  **non-consummable** items can only be purchased once, and can be restored by the user if they ever delete and re-install the app, or purchase a new device.  The *removeAds* product is non-consummable.
 
@@ -359,7 +351,7 @@ local iapOptions = {
     catalogue=catalogue,
     --The filename in which to save the inventory
     filename="goodies.txt",
-    --Salt for the hashing algorithm
+    --Salt for the hashing algorithm (optional)
     salt = "something tr1cky to gue55!",
 
 	--***New stuff below
@@ -391,7 +383,7 @@ local iapOptions = {
     catalogue=catalogue,
     --The filename in which to save the inventory
     filename="goodies.txt",
-    --Salt for the hashing algorithm
+    --Salt for the hashing algorithm (optional)
     salt = "something tr1cky to gue55!",
 
 	--***New stuff below

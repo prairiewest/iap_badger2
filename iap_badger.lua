@@ -5,7 +5,7 @@ local public = Library:new{ name='iap_badger', publisherId='uk.co.happymongoose'
 local store={}
 public.store=store
 
-local version=18
+local version=19
 
 --[[
 
@@ -15,6 +15,12 @@ Currently supports: iOS App Store / Google Play / Amazon / simulator
 
 Changelog
 ---------
+
+Version 19
+* Removed all reverences to old Google store plugin (its API level is too low, Google will no longer accept apps using it)
+* Updated iOS store plugin
+* Updated Amazon store plugin
+* Updated Google store plugin
 
 Version 18
 * purchases on Google Store that fail because the user already owns the specified item are now converted into standard purchase events (to replicate behaviour on iOS).  This can be turned on/off with the googleConvertOwnedPurchaseEvents flag during initialisation.
@@ -56,10 +62,10 @@ Version 9
 * added automatic build number check to see whether IAP Badger needs to run in synchronous mode for new Google IAP v3 interface
 
 Version 8.02
-* fixed minor error with usingOldGoogle
+* redacted
 
 Version 8:
-* updated for Google IAP update (store.init now asynchronous) - disable this by setting usingOldGoogle to true in iap.init()
+* updated for Google IAP update (store.init now asynchronous)
 * added getVersion(), consumeAllProducts() and printLoadProductsCatalogue() functions
 * improved handling of loadProducts in debug mode or on the simulator, so it better simulates the delay experienced on a real device
 
@@ -212,7 +218,7 @@ local postRestoreCallbackListener=nil
 local fakeRestoreTimeoutFunction=nil
 local fakeRestoreTimeoutTime=nil
 
---For Google IAP v3 only...
+--For Google IAP only...
 --Indicates whether the store has been initialised (for handling asynchronous initialisation on Google IAP
 local storeInitialized = nil
     --Once the store is initialised, run a restore
@@ -1061,9 +1067,8 @@ local function storeTransactionCallback(event)
         transaction.state="refunded"
     end
 
-        --If on Google Play, and this purchase failed because the user already owns the item, convert the failed event into a restore event
-    if (targetStore=="google") and (transaction.state=="failed") and (transaction.errorType==7) then
-
+    --If on Google Play, and this purchase failed because the user already owns the item, convert the failed event into a restore event
+    if targetStore=="google" and transaction.state=="failed" and transaction.errorType ~= nil and transaction.errorType==7 then
         --If converting these events to successful events (like on iOS)...
         if (googleConvertOwnedPurchaseEvents) then
           --Set the new transaction state
@@ -1086,8 +1091,8 @@ local function storeTransactionCallback(event)
             print "User already owns item.  Purchase event failed."
           end
       end
-
     end
+
     --Reset last google purchase product name
     googleLastPurchaseProductID=""
 
@@ -1294,10 +1299,10 @@ local function storeTransactionCallback(event)
         end
         --If this is a consumable, and running on Google Play, immediate consume the item so it can be purchased again
         if (targetStore=="google") and (product.productType=="consumable") then
-            if (verboseDebugOutput) then print "Running Anroid consumePurchase event on 10ms timer" end
+            if (verboseDebugOutput) then print "Running Android consumePurchase event on timer" end
             --Run this on a timer - not recommended to consume purchases within the IAP listener
             -- CGM: Increased the delay from 10 to 100. October 2021
-            timer.performWithDelay(100, function() store.consumePurchase({transaction.productIdentifier}) end)
+            timer.performWithDelay(100, function() store.consumePurchase(transaction.productIdentifier) end)
         end
         if (verboseDebugOutput) then print "IAP Badger: leaving storeTransactionCallback" end
         return true
@@ -1498,12 +1503,12 @@ purchase=function(productList, listener)
     end
 
     -------------------------------
-    --Handle Google IAP v3
+    --Handle Google IAP
 
     if (targetStore=="google") then
         --Parameter check (user can only pass a string, rather than a table of strings, as Google only supports purchases one item at a time)
         if (tableCount(productList)>1) then
-            error("iap_badger:purchase - attempted to pass more than one product to purchase on Google Play (IAP v3 only supports one product purchase at a time)")
+            error("iap_badger:purchase - attempted to pass more than one product to purchase on Google Play (IAP only supports one product purchase at a time)")
         end
         --Convert the product from a catalogue name to a store name
         local renamedProduct = getAppStoreID(productList[1])
@@ -1572,7 +1577,6 @@ public.purchase=purchase
 --      * debugMode (optional) - set to true to start in debug mode
 --      * debugStore (optional) - identify a store to use in debug mode (eg. "apple", "google").  Only valid on simulator
 --      * doNotLoadInventory (optional) - set to true to start with an empty inventory (useful for debugging)
---      * usingOldGoogle (optional) - set to true if you're using an old build of Corona (earlier than 2017.3105) and don't need to worry about asynchronous changes to store.init
 --      * verboseDebugOutput (optional) - sends lots of debugging info to the console
 --      * handleInvalidProductIDs (optional) - set to true to ignore invalid product IDs during a restore event -  but tell the store they have been successfully processed.  This can be useful is a product ID for an app has been changed/deleted but some users still have products registered against them.  Default is false
 --      * googleConvertOwnedPurchaseEvents (optional, affects Android only) - set to true to convert failing purchase events to successful ones, where the attempt failed because the user already owns the item, mimicking the flow on iOS.  Default is true.
@@ -1607,27 +1611,6 @@ local function init(options)
           googleConvertOwnedPurchaseEvents = true
         else
           googleConvertOwnedPurchaseEvents = false
-        end
-    end
-
-    --Check usingOldGoogle flag - if this hasn't been set, and running on an older build than 2017.3106, then force IAP Badger to use old library
-    --Check usingOldGoogle flag - if this hasn't been set, and running on an older build than 2017.3106, then force IAP Badger to use old library
-    local autodetectGoogle=false
-    if ((options.usingOldGoogle==nil) and (system.getInfo("targetAppStore")=="google")) then autodetectGoogle=true end
-    if ((options.usingOldGoogle==nil) and (system.getInfo("environment")=="simulator") and (options.debugStore=="google")) then autodetectGoogle=true end
-    if (autodetectGoogle) then
-        --Grab the build
-        local build = system.getInfo("build")
-        --If the build string is in the format YYYY-version...
-        if (string.match(build, "^%d*%.%d*$")~=nil) then
-            --Split the build into year and version
-            local build_year = tonumber(string.match(build, "^(%d*)%.%d*$"))
-            local build_version = tonumber(string.match(build, "^%d*%.(%d*)$"))
-            if (build_year<2017) then options.usingOldGoogle=true end
-            if (build_year>=2017) and (build_version<3106) then options.usingOldGoogle=true end
-            if (verboseDebugOutput) and (options.usingOldGoogle) then
-                print "Automatically detected app needs old version of Google interface (Corona build earlier than 2017.3106)"
-            end
         end
     end
 
@@ -1691,32 +1674,26 @@ local function init(options)
          --Initialise if the store is available
         if targetStore=="apple" then
             if (verboseDebugOutput) then print "Running on iOS" end
-            store=require("store")
+            store=require("plugin.apple.iap")
             store.init("apple", storeTransactionCallback)
             storeAvailable = true
             storeInitialized = true
         elseif targetStore=="google" then
             if (verboseDebugOutput) then print "Running on Android (Google Play)" end
-            -- CGM: Changed October 2021 to make IAP Badger compatible with plugin.google.iap.billing
-            store=require("plugin.google.iap.billing")
+            store=require("plugin.google.iap.billing.v2")
             store.init("google", storeTransactionCallback)
             storeAvailable = true
             --Init in Google IAP is asynchronous - record that the call has yet to complete
-            if (options.usingOldGoogle==nil) then
-                storeInitialized = false
-                initQueue = {}
-                if (verboseDebugOutput) then
-                    print "Using asynchronous Google IAP integration"
-                    print "Waiting for store to initialise, queuing future store functions."
-                end
-            else
-                if (verboseDebugOutput) then print "Using synchronous Google IAP framework" end
-                storeInitialized=true
+            storeInitialized = false
+            initQueue = {}
+            if (verboseDebugOutput) then
+                print "Using asynchronous Google IAP integration"
+                print "Waiting for store to initialise, queuing future store functions."
             end
         elseif targetStore=="amazon" then
             if (verboseDebugOutput) then print "Running on Android (Amazon)" end
             --Switch to the amazon plug in
-            store=require("plugin.amazon.iap")
+            store=require("plugin.amazon.iap.v3")
             store.init(storeTransactionCallback)
             if (store.isActive) then storeAvailable=true end
             storeInitialized = true
