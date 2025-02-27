@@ -949,6 +949,20 @@ local function getAppStoreID(productName)
 
 end
 
+--Determine if a product is a subscription
+local function getIsSubscription(productName)
+
+    local searchStore=targetStore
+    if (targetStore=="simulator") then searchStore=debugStore end
+    if searchStore == "google" then
+        return catalogue.products[productName].isSubscription
+    else
+        --on iOS subscriptions are treated as normal purchases, so we don't want to call the purchaseSubscription function which doesn't exist
+        return false
+    end 
+
+end
+
 local function checkPreviousTransactionsForProduct(productIdentifier, transactionIdentifier)
 
     --If the table is empty, return false
@@ -1040,7 +1054,7 @@ local function storeTransactionCallback(event)
             "errorType", "errorString", "userId", "transactionIdentifier", "state", "productIdentifier", "isError" }
     --From the real transaction, copy in any passed value over those null strings
     for key, value in pairs(transaction_vars) do
-        if event.transaction[value] then
+        if event.transaction and event.transaction[value] then
             transaction[value]=event.transaction[value]
         else
             transaction[value]=""
@@ -1231,10 +1245,10 @@ local function storeTransactionCallback(event)
         if (verboseDebugOutput) then print "IAP Badger: leaving storeTransactionCallback" end
         return true
     end
-    -- CGM: Added October 2021 to make IAP Badger compatible with plugin.google.iap.billing.
+
     if (transaction.state=="finished") then
       if (debugMode~=true) then store.finishTransaction(event.transaction) end
-      if (verboseDebugOutput) then print "IAP Badger: state=='finished' - leaving storeTransactionCallback" end
+      if (verboseDebugOutput) then print "IAP Badger: finished - leaving storeTransactionCallback" end
         return true
     end
 
@@ -1268,7 +1282,10 @@ local function storeTransactionCallback(event)
             if (verboseDebugOutput) then print "Returned from user defined purchase listener (silent catalogue listener)" end
         end
         --Tell the store we're finished
-        if (debugMode~=true) then store.finishTransaction(event.transaction) end
+        if (debugMode~=true) then 
+            if (verboseDebugOutput) then print "Calling finishTransaction now" end
+            store.finishTransaction(event.transaction) 
+        end
         --If the user specified a listener to call after this transaction, call it
         if (transaction.state=="purchased") and (postStoreTransactionCallbackListener~=nil) then
             if (verboseDebugOutput) then print "Calling user defined purchase listener (noisy)" end
@@ -1301,8 +1318,11 @@ local function storeTransactionCallback(event)
         if (targetStore=="google") and (product.productType=="consumable") then
             if (verboseDebugOutput) then print "Running Android consumePurchase event on timer" end
             --Run this on a timer - not recommended to consume purchases within the IAP listener
-            -- CGM: Increased the delay from 10 to 100. October 2021
-            timer.performWithDelay(100, function() store.consumePurchase(transaction.productIdentifier) end)
+            --Increased from 10ms to 500ms, otherwise multi-quantity purchases failed to complete in time
+            timer.performWithDelay(500, function() 
+                if (verboseDebugOutput) then print "calling consumePurchase now" end
+                store.consumePurchase({transaction.productIdentifier}) 
+            end)
         end
         if (verboseDebugOutput) then print "IAP Badger: leaving storeTransactionCallback" end
         return true
@@ -1523,7 +1543,13 @@ purchase=function(productList, listener)
             --Real store will want the name of the product as a string (and nothing else)
             if (verboseDebugOutput) then print "Requesting purchase from Google Play..." end
             googleLastPurchaseProductID = renamedProduct
-            store.purchase(renamedProduct)
+            if getIsSubscription(productList[1]) then
+                if (verboseDebugOutput) then print("call purchaseSubscription ", renamedProduct) end
+                store.purchaseSubscription(renamedProduct)
+            else
+                if (verboseDebugOutput) then print("call purchase ", renamedProduct) end
+                store.purchase(renamedProduct)
+            end
         end
         --Quit here
         if (verboseDebugOutput) then print "IAP Badger: leaving purchase" end

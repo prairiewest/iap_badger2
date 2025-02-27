@@ -138,7 +138,7 @@ local catalogue = {
                     google="com.example.iap.promocoins",
                 },
                 --The product type
-                productType = "consumable"
+                productType = "consumable",
                 --Allow this consumable to be restored - I want to use it for a promo code
                 allowRestore=true
         }
@@ -293,7 +293,7 @@ Both of these examples assume you are using the plug-in version of IAP Badger on
 
 ####Example 2
 
-Using IAP Badger to purchase an IAP for removing advertisements from an app, including all UI code.  Also includes a restore products function.
+Using IAP Badger to purchase an IAP for removing advertisements from an app, including all UI code.  Also includes a restore products function. Note that the isSubscription flag is not yet folly documented.
 
 
 ```Lua
@@ -342,6 +342,7 @@ local catalogue = {
                 productNames = { apple="remove_ads", google="REMOVE_BANNER", amazon="Banner_Remove"},
                 --The product type
                 productType = "non-consumable",
+                isSubscription = false,
                 --This function is called when a purchase is complete.
                 onPurchase=function() iap.setInventoryValue("unlock", true) end,
                 --The function is called when a refund is made
