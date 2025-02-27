@@ -21,6 +21,7 @@ Version 19
 * Updated iOS store plugin
 * Updated Amazon store plugin
 * Updated Google store plugin
+* Added code to handle subscription purchases
 
 Version 18
 * purchases on Google Store that fail because the user already owns the specified item are now converted into standard purchase events (to replicate behaviour on iOS).  This can be turned on/off with the googleConvertOwnedPurchaseEvents flag during initialisation.
