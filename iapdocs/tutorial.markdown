@@ -14,6 +14,8 @@ IAP Badger provides two core elements:
 * IAP handling
 * an inventory facility for recording those purchases
 
+Please see the code in the `example 1` folder.
+
 In this quickstart example, we will only concern ourselves with IAP handling (ie. the process of handling an in-app purchase once the user presses a 'buy' button or something similar in our app).  The code will correctly process an IAP purchase across iOS, Google Play and Amazon, despite the fact they have been given different identifiers in each console.
 
 Begin by passing IAP Badger a product catalogue table - a description of each of the in-app products available, and their associated identifiers on iTunes Connect, Google Play Console and Amazon's console.  IAP Badger automatically works out the correct product ID for the user's device at runtime.
@@ -25,57 +27,6 @@ Likewise, IAP Badger will always provide information about an IAP using its cata
 **The only time you ever use the product ID from a specific app store is in the productNames table for your IAP.**
 
 Finally, call iap.purchase() and IAP Badger will take care of the rest.
-
-
-
-```lua
-
-
---Example1.lua
---
---Simplest possible example of using IAP Badger to purchase an IAP.
-
---Load IAP Badger
-local iap = require("iap_badger")
-
---Create the catalogue
-local catalogue = {
-
-    --Information about the product on the app stores
-    products = {     
-        --removeAds is the product identifier.
-        removeAds = {
-                --A list of product names or identifiers specific to apple's App Store or Google Play.
-                productNames = {
-                    apple="com.example.iap.product1",
-                    google="com.example.iap.product1",
-                    amazon="com.example.iap.product1"
-                },
-                --The product type
-                productType = "non-consumable"
-        }
-    }
-}
-
---This table contains all of the options we need to specify in this example program.
-local iapOptions = {
-    --The catalogue generated above
-    catalogue=catalogue,
-}
-
---Initialise IAP badger
-iap.init(iapOptions)
-
---Called when the relevant app store has completed the purchase
---Make a record of the purchase using whatever method you like
-local function purchaseListener(product )
-    print "Purchase made"
-end
-
-
-iap.purchase("removeAds", purchaseListener)
-
-```
 
 In the above example, IAP Badger does not make a record of the purchase on the user's device (this is the purpose of the inventory management system).
 
@@ -91,12 +42,7 @@ The following sections now go into more detail about how to set up your catalogu
 ### How to use: non-consumable items
 
 
-#### Example 2: remove advertisements from an app
-
-[Download the code for example 2.](iapdocs/example%202.zip)
-
 In this simple example, we will look at a program that has a single product: an item that indicates the user has paid to remove advertisements from an app.
-
 
 #####Setting up the catalogue
 
@@ -429,9 +375,7 @@ Once everything is working, make sure you comment out / remove any reference to 
 
 ### How to use: consumable items
 
-####Example 3: Purchasing coins (as in game currency)
-
-[Download the code for example 3.](iapdocs/example%203.zip)
+Please see the code in the `example 2` folder.
 
 The example code given above shows how to handle non-consumable items in the player inventory (ie. the user has purchased them, or they haven't.) Non-consumable items don't really have a quantity as such - they are present or absent.
 
