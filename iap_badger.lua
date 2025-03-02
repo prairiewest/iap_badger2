@@ -244,12 +244,11 @@ local loadProductsFinished=nil
     local function getLoadProductsFinished() return loadProductsFinished end
     public.getLoadProductsFinished = getLoadProductsFinished
 
--- CGM: I'm adding a variable to access the productIdentifier in Google transactions
--- so I can consume them in the event of a transaction failure to work around this weird problem
--- with purchases being successful but then getting a "failed" instead of a "consumed".
-local googleProductIdentifier
+-- Save the translated product identifier for reuse
+local savedProductIdentifier
 
 --Returns number of items in table
+--Where the table may have holes in it
 local function tableCount(src)
 	local count = 0
 	if( not src ) then return count end
@@ -1089,15 +1088,15 @@ local function storeTransactionCallback(event)
         retryCount = retryCount + 1
         if retryCount <= 3 then
             if (verboseDebugOutput) then print "[IAP Badger] Consuming Google product as failsafe for failed transaction." end
-            if (googleProductIdentifier) then
-                print( "[IAP Badger] googleProductIdentifier = " .. googleProductIdentifier )
+            if (savedProductIdentifier) then
+                print( "[IAP Badger] savedProductIdentifier = " .. savedProductIdentifier )
                 timer.performWithDelay(100*retryCount, function()
                     if (verboseDebugOutput) then print "[IAP Badger] calling consumePurchase now" end
-                    store.consumePurchase(googleProductIdentifier)
+                    store.consumePurchase(savedProductIdentifier)
                     if (debugMode~=true) then store.finishTransaction(event.transaction) end
                 end)
             else
-                print( "[IAP Badger] googleProductIdentifier is nil - cannot call consumePurchase" )
+                print( "[IAP Badger] savedProductIdentifier is nil - cannot call consumePurchase" )
             end
         else
             if (verboseDebugOutput) then print "[IAP Badger] Maximum retryCount reached; giving up" end
@@ -1544,7 +1543,7 @@ purchase=function(productList, listener)
         end
         --Convert the product from a catalogue name to a store name
         local renamedProduct = getAppStoreID(productList[1])
-        googleProductIdentifier = renamedProduct
+        savedProductIdentifier = renamedProduct
         --Purchase it
         if (debugMode==true) then
             --Convert back into a table for fake purchases
