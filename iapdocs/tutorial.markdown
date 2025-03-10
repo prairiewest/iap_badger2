@@ -46,15 +46,7 @@ In this simple example, we will look at a program that has a single product: an 
 
 #####Setting up the catalogue
 
-IAP Badger essentially handles two separate tasks: handling calls to and from the app stores, and managing an inventory of items that have been purchased.  So in order to function, you need to provide a catalogue that conveys these two types of information.  An empty catalogue would look like this:
-
-```lua
-
-local catalogue = {
-	--An empty product table
-	products = {}
-}
-```
+IAP Badger essentially handles two separate tasks: handling calls to and from the app stores, and managing an inventory of items that have been purchased.  So in order to function, you need to provide a catalogue that conveys these two types of information.
 
 Let's add our single product to the products table: an IAP product to remove banner advertisements from the app.
 
@@ -85,6 +77,10 @@ local catalogue = {
 		}
 	}
 
+	--Information about how to handle the inventory item
+	inventoryItems = {
+		unlock = { productType="non-consumable" }
+	}
 }
 ```
 
@@ -105,42 +101,7 @@ The purchase and refund functions in the product catalogue should work silently 
  - onPurchase: this function is called following a successful purchase.  In the example above, an item called "unlock" with the value "true" is added to the inventory.
  - onRefund: this function is called following a refund.  In the above, the "unlock" item is removed from the inventory (the *true* value indicates that the item should be completely removed from the inventory).
 
-Let's add a simple inventory item to the catalogue.  The inventory items simply tell IAP Badger a little about how the items should be handled in the inventory.
-
-```lua
-
-local catalogue = {
-	--Information about the product on the app stores
-	products = {
-
-		--removeAds is the product identifier.
-		--Always use this identifier to talk to IAP Badger about the purchase.
-		removeAds = {
-
-			--A list of product names or identifiers specific to apple's App Store or Google Play.
-			productNames = { apple="remove_ads", google="REMOVE_BANNER" },
-
-			--The product type
-			productType = "non-consumable",
-
-			--This function is called when a purchase is complete.
-			onPurchase=function() iap.setInventoryValue("unlock", true) end,
-
-			--The function is called when a refund is made
-			onRefund=function() iap.removeFromInventory("unlock", true) end,
-
-		}
-	},
-
-	--Information about how to handle the inventory item
-	inventoryItems = {
-		unlock = { productType="non-consumable" }
-	}
-
-```
-
-And that's the catalogue set up.
-
+The inventory item tracks purchase of the non-consumable product.
 
 #####Initialise IAP Badger
 
