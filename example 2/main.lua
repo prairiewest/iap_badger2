@@ -10,7 +10,7 @@
 ---------------------------------
 
 --Load IAP Badger
-local iap = require("iap_badger")
+local iap = require("iap_badger2")
 
 --Progress spinner
 local spinner=nil
