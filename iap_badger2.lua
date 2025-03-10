@@ -1,5 +1,5 @@
 local Library = require "CoronaLibrary"
-local public = Library:new{ name='iap_badger', publisherId='uk.co.happymongoose' }
+local public = Library:new{ name='iap_badger2', publisherId='net.prairiewest' }
 
 --Store library
 local store={}
@@ -9,7 +9,7 @@ local version=19
 
 --[[
 
-IAP badger - the trolley of the future.
+IAP badger - unified in-app purchases.
 
 Currently supports: iOS App Store / Google Play / Amazon / simulator
 

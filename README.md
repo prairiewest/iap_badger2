@@ -1,4 +1,4 @@
-# iap_badger
+# iap_badger2
 
 A unified approach to in-app purchases with Solar2D.
 
@@ -6,7 +6,7 @@ Although Solar2D offers an IAP API that is quite similar across the app stores, 
 
 ## Overview
 
-The iap_badger plugin can be used in your Solar2D project.  It provides:
+The iap_badger2 plugin can be used in your Solar2D project.  It provides:
 
 * A simplified set of functions for processing in-app purchases (IAP)
 * The ability to write a single piece of IAP code that works across Apple's App Store, Google Play and Amazon
@@ -25,4 +25,4 @@ The code included in this repository is a standard lua library, which can be inc
 
 The documentation for IAP Badger can be found in the **iapdocs** folder in this project.
 
-IAP Badger was originally written by [happymongoose](github.com/happymongoose). This code is being maintained by [prairiewest](https://github.com/prairiewest).  It was originally a fork of the original IAP Badger, however since the upstream repository was no longer maintained this code is now detached.
+IAP Badger was originally written by [happymongoose](github.com/happymongoose). This code is being maintained by [prairiewest](https://github.com/prairiewest).  It started as a fork of the original IAP Badger, however since the upstream repository was no longer maintained this code is now detached.
