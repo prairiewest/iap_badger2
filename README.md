@@ -25,4 +25,4 @@ The code included in this repository is a standard lua library, which can be inc
 
 The documentation for IAP Badger can be found in the **iapdocs** folder in this project.
 
-IAP Badger was originally written by [happymongoose](github.com/happymongoose). This code is being maintained by [prairiewest](https://github.com/prairiewest).  It started as a fork of the original IAP Badger, however since the upstream repository was no longer maintained this code is now detached.
+IAP Badger was originally written by [happymongoose](https://github.com/happymongoose). This code is being maintained by [prairiewest](https://github.com/prairiewest).  It started as a fork of the original IAP Badger, however since the upstream repository was no longer maintained this code is now detached.
