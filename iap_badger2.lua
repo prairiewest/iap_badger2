@@ -1059,8 +1059,8 @@ verifyReceiptListener = function(event)
             responseObject = json.decode(event.response)
             if responseObject.error == 0 then
                 verified = true
-                if responseObject.endDate ~= nil and responseObject.endDate > 0 then
-                    transaction.subscriptionEndDate = responseObject.endDate
+                if responseObject.sub_end_date ~= nil and responseObject.sub_end_date > 0 then
+                    transaction.subscriptionEndDate = responseObject.sub_end_date
                 end
             end
         end
