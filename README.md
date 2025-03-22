@@ -19,6 +19,10 @@ IAP Badger is wrapper class written in pure lua for Solar2D's Apple store librar
 
 It's supplied under an MIT license, so fork it and do what you like with it.
 
+## Google Subscription Purchases
+
+If you want to implement Google Subscription in-app purchases then the receipts must be verified using a server, they cannot be verified within your app. You will need to install the code from this other project to your server: https://github.com/prairiewest/verifyreceipt
+
 ## Documentation
 
 The code included in this repository is a standard lua library, which can be included in your project and forked/amended as required.
