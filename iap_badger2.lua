@@ -1042,27 +1042,31 @@ end
 verifyReceiptListener = function(event)
     local verified = false
     if (event.isError) then
-        logVerbose("[IAP Badger] Network ERROR; response: ")
+        logVerbose("[IAP Badger] ERROR in call to verification server; response: ")
         debugPrint(event.response)
     else
-        logVerbose("[IAP Badger] Network OK; response: ")
+        logVerbose("[IAP Badger] Call to verification server is OK; response: ")
         debugPrint(event.response)
 
         local product = asyncState.product
         local productName = asyncState.productName
         local transaction = asyncState.transaction
-        logVerbose("[IAP Badger] async state after call: ")
-        debugPrint(asyncState)
         asyncState=nil
 
-        if response ~= nil then
+        -- Check if the server says receipt is valid
+        if event.response ~= nil then
             responseObject = json.decode(event.response)
-            if responseObject.error ~= nil and tonumber(responseObject.error) == 0 then
+            if responseObject.valid ~= nil and tonumber(responseObject.valid) == 1 then
+                logVerbose("[IAP Badger] Receipt is valid")
                 verified = true
                 if responseObject.sub_end_date ~= nil and responseObject.sub_end_date > 0 then
                     transaction.subscriptionEndDate = responseObject.sub_end_date
                 end
+            else
+                logVerbose("[IAP Badger] ERROR Receipt not valid")
             end
+        else
+            print("[IAP Badger] ERROR Could not verify receipt: event response was null")
         end
 
         if verified == true then
@@ -1088,7 +1092,7 @@ end
 verifyReceipt = function(store, product, productName, transaction)
     if receiptVerifyURL == nil then
         print("[IAP Badger] ************************************")
-        print("[IAP Badger] ERROR: cannot make call to receipt verification service, receiptVerifyURL is blank")
+        print("[IAP Badger] ERROR cannot make call to receipt verification service, receiptVerifyURL is blank")
         print("[IAP Badger] ************************************")
         return
     end
