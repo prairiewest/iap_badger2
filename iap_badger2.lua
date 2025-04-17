@@ -190,6 +190,7 @@ local loadProductsCallback
 local restore
 local purchase
 local retryCount = 0
+local onSimulator = false
 
 --Switches (and default values)
 local handleInvalidProductIDs=false
@@ -229,8 +230,8 @@ local fakeRestoreTimeoutTime=nil
 --For Google IAP only...
 --Indicates whether the store has been initialised (for handling asynchronous initialisation on Google IAP
 local storeInitialized = nil
-    --Once the store is initialised, run a restore
-    local initQueue = nil
+--Once the store is initialised, run a restore
+local initQueue = nil
 local googleLastPurchaseProductID = ""
 --On Google, if a purchase fails because the user already owns the item, convert the 'fail' state to success
 local googleConvertOwnedPurchaseEvents = true
@@ -1453,11 +1454,12 @@ storeTransactionCallback = function(event)
     --If successfully purchasing or restoring a transaction...
     if (transaction.state=="purchased") or (transaction.state=="restored") then
         local receiptVerificationInProgress = false
+        local isSubscription = getIsSubscription(productName)
 
         -- Apple subscriptions can use the receipt data to determine subscription end date
         local receiptData = nil
         transaction.subscriptionEndDate = 0
-        if getIsSubscription(productName) and targetStore == "apple" then
+        if isSubscription and targetStore == "apple" then
             if store.receiptAvailable() then
                 receiptData = store.receiptDecrypted()
                 if receiptData ~= nil and receiptData.in_app ~= nil then
@@ -1484,7 +1486,7 @@ storeTransactionCallback = function(event)
         end
 
         -- Google subscriptions require server side verification to determine subscription end date
-        if getIsSubscription(productName) and targetStore == "google" then
+        if isSubscription and targetStore == "google" then
             if transaction.receipt ~= nil then
                 if receiptVerifyURL ~= nil then
                     logVerbose("[IAP Badger] Starting async Google subscription receipt verification")
@@ -1500,6 +1502,10 @@ storeTransactionCallback = function(event)
                 print("[IAP Badger] ERROR Receipt data was blank")
                 print("[IAP Badger] ************************************")
             end
+        end
+
+        if isSubscription and targetStore == "simulator" then
+            transaction.subscriptionEndDate = os.time() + 600 -- Simulator subscriptions last 5 minutes
         end
 
         --Call the user specified purchase function, only if receipt verification is not in progress
@@ -1658,7 +1664,7 @@ restore=function(emptyFlag, postRestoreListener, timeoutFunction, cancelTime)
     previouslyRestoredTransactions={}
 
     --Initiate restore purchases with store
-    if (debugMode==true) then
+    if debugMode==true or onSimulator then
         logVerbose("[IAP Badger] On simulator/debug mode - faking restore")
         fakeRestoreTimeoutTime=cancelTime
         fakeRestoreTimeoutFunction=timeoutFunction
@@ -1905,7 +1911,7 @@ local function init(options)
     end
 
     --On device or simulator?
-    local onSimulator = (system.getInfo("environment")=="simulator")
+    onSimulator = (system.getInfo("environment")=="simulator")
 
     --Initalise store
     --Assume the store isn't available
@@ -1922,7 +1928,7 @@ local function init(options)
     end
 
     --If running on the simulator, set the target store manually
-    if (onSimulator==true) then
+    if onSimulator then
         targetStore="simulator"
         storeAvailable=true
         storeInitialized=true
@@ -1989,14 +1995,14 @@ local function init(options)
     if (options.debugMode==true) then debugMode=true end
 
     --Record store name
-    if (onSimulator==false) then
+    if onSimulator==false then
         storeName = storeNames[targetStore]
     else
         storeName = storeNames[debugStore]
     end
 
     --If running on a device, and in debug mode, then make sure user knows
-    if (onSimulator==false) and debugMode==true then
+    if onSimulator==false and debugMode==true then
         native.showAlert("Warning", "Running IAP Badger in debug mode on device", {"Ok"})
     end
 
