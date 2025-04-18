@@ -209,6 +209,8 @@ local asyncState=nil
 local targetStore=nil
 --Debug mode
 local debugMode=false
+-- Has init been completed
+local initDone=false
 --Store to debug as
 local debugStore="apple"
 --Verbose debug output to console?
@@ -1292,7 +1294,7 @@ storeTransactionCallback = function(event)
             end
         else
             if (verboseDebugOutput) then
-              print("[IAP Badger] User already owns item.  Purchase event failed.")
+              print("[IAP Badger] User already owns item.  PURCHASE event failed.")
             end
         end
     end
@@ -1615,12 +1617,17 @@ public.getProductIdentifierFromName=getProductIdentifierFromName
 --   cancelTime (optional): how long to wait in ms before calling timeoutFunction (default 10s)
 restore=function(emptyFlag, postRestoreListener, timeoutFunction, cancelTime)
 
-    logVerbose("[IAP Badger] Restore")
+    logVerbose("[IAP Badger] Entering RESTORE")
 
     if (emptyFlag~=true) and (emptyFlag~=false) then
         print("[IAP Badger] ************************************")
         print("[IAP Badger] ERROR Restore called without setting emptyFlag to true or false (should non-consumables in inventory be removed before contacting store?) ***")
         print("[IAP Badger] ************************************")
+        return
+    end
+
+    if not initDone then
+        print("[IAP Badger] ERROR Cannot call restore() before calling init()")
         return
     end
 
@@ -1702,9 +1709,14 @@ public.restore=restore
 purchase=function(productList, listener)
 
     if (verboseDebugOutput) then
-        print("[IAP Badger] Entering purchase")
-        print("[IAP Badger] Called with productList:")
+        print("[IAP Badger] Entering PURCHASE")
+        print("[IAP Badger] Purchasing productList:")
         debugPrint(productList)
+    end
+
+    if not initDone then
+        print("[IAP Badger] ERROR Cannot call purchase() before calling init()")
+        return
     end
 
     --If running on Google IAP, the store may not have been initialised at this point.  If it isn't ready, queue up the purchase for when it is and quit now
@@ -2006,6 +2018,7 @@ local function init(options)
         native.showAlert("Warning", "Running IAP Badger in debug mode on device", {"Ok"})
     end
 
+    initDone = true
     logVerbose("[IAP Badger] Leaving init")
 end
 public.init = init
