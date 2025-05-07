@@ -1401,7 +1401,7 @@ storeTransactionCallback = function(event)
         if (transactionFailedListener~=nil) then
             logVerbose("[IAP Badger] Calling failed listener")
             transactionFailedListener(productName, event.transaction)
-            logVerbose("[IAP Badger] Returned from failed lsitener")
+            logVerbose("[IAP Badger] Returned from failed listener")
         else
             native.showAlert("Error", "Transaction failed: " .. transaction.errorString, {"Ok"})
         end
@@ -1764,7 +1764,7 @@ purchase=function(productList, listener)
             fakePurchase(renamedProductList)
         else
             --Real store will want the name of the product as a string (and nothing else)
-            logVerbose("[IAP Badger] Requesting purchase from Amazon...")
+            logVerbose("[IAP Badger] Requesting purchase of " .. renamedProduct .. " from Amazon...")
             store.purchase(renamedProduct)
         end
         --Quit here
@@ -1978,7 +1978,7 @@ local function init(options)
     elseif targetStore=="amazon" then
         logVerbose("[IAP Badger] Running on Android (Amazon)")
         --Switch to the amazon plug in
-        store=require("plugin.amazon.iap.v3")
+        store=require("plugin.amazon.iap")
         store.init(storeTransactionCallback)
         if (store.isActive) then storeAvailable=true end
         storeInitialized = true
@@ -2463,11 +2463,15 @@ loadProducts=function(callback)
     local listOfProducts={}
     local listOfSubscriptions={}
     for key, thisProduct in pairs(catalogue.products) do
-        logVerbose("[IAP Badger] Preparing loadProducts for product ID " .. thisProduct.productNames[targetStore])
-        if targetStore == "google" and getIsSubscription(key) then
-            listOfSubscriptions[#listOfSubscriptions+1]=thisProduct.productNames[targetStore]
+        if thisProduct.productNames[targetStore] ~= nil then
+            logVerbose("[IAP Badger] Preparing loadProducts for product ID " .. thisProduct.productNames[targetStore])
+            if targetStore == "google" and getIsSubscription(key) then
+                listOfSubscriptions[#listOfSubscriptions+1]=thisProduct.productNames[targetStore]
+            else
+                listOfProducts[#listOfProducts+1]=thisProduct.productNames[targetStore]
+            end
         else
-            listOfProducts[#listOfProducts+1]=thisProduct.productNames[targetStore]
+            logVerbose("[IAP Badger] Product " .. key .. " does not exist for " .. targetStore .. " store, not adding")
         end
     end
 
