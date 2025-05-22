@@ -22,6 +22,7 @@ Version 19
 * Updated Amazon store plugin
 * Updated Google store plugin
 * Added code to handle subscription purchases
+* Added Google subscription verification via server
 
 Version 18
 * purchases on Google Store that fail because the user already owns the specified item are now converted into standard purchase events (to replicate behaviour on iOS).  This can be turned on/off with the googleConvertOwnedPurchaseEvents flag during initialisation.
@@ -152,6 +153,9 @@ given back to the community :)
 
 --Product catalogue
 local catalogue=nil
+
+--The app package name (ie: com.example.myapp)
+local packageName=nil
 
 --User inventory
 local inventory=nil
@@ -928,11 +932,10 @@ public.consumeAllPurchases = consumeAllPurchases
 
 -- ************************************************************************************************************
 
---Returns the product name and product data from the catalogue, for the product with the given
---app store id.
+--Returns the product name and product data from the catalogue, 
+--for the product with the given app store id.
 local function getProductFromIdentifier(id)
-    --Search the product catalogue for the relevant target store - if running in the simulator,
-    --default to iOS.
+    --Search the product catalogue for the relevant target store - if running in the simulator, default to iOS.
     local searchStore=targetStore
     if (targetStore=="simulator") then searchStore=debugStore end
 
@@ -944,7 +947,10 @@ local function getProductFromIdentifier(id)
         --If this product has a store product names table...
         if (value.productNames~=nil) then
             --If this product has an entry in the correct store for the item that has been purchased...
-            if (value.productNames[searchStore]==id) then
+            local thisProdName = value.productNames[searchStore]
+            local isSub = false; if value.isSubscription then isSub = true; end
+            -- Amazon subscription product IDs are substrings of the termSku product ID
+            if (thisProdName==id) or (searchStore=="amazon" and isSub and string.sub(thisProdName,1,#id)==id) then
                 --Return the product name and the product info from the catalogue
                 return key, value
             end
@@ -967,6 +973,9 @@ end
 
 --Determine if a product is a subscription
 local function getIsSubscription(productNameOrID)
+    if productNameOrID == nil then
+        return false
+    end
     local searchStore=targetStore
     if (targetStore=="simulator") then searchStore=debugStore end
     if searchStore == "google" or searchStore == "apple" or searchStore == "amazon" then
@@ -981,13 +990,17 @@ local function getIsSubscription(productNameOrID)
         else
             -- Not a product name, search for a product ID match
             for pName, pProd in pairs(catalogue.products) do
-                if pProd.productNames ~= nil and pProd.productNames[searchStore] == productNameOrID then
-                    if catalogue.products[pName].isSubscription then
-                        logVerbose("[IAP Badger] Is subscription (" .. productNameOrID .. ") -> true" )
-                    else
-                        logVerbose("[IAP Badger] Is subscription (" .. productNameOrID .. ") -> false" )
+                if pProd.productNames ~= nil then
+                    local thisProdName = pProd.productNames[searchStore]
+                    -- Amazon subscription product IDs are substrings of the termSku
+                    if (thisProdName == productNameOrID) or (searchStore=="amazon" and string.sub(thisProdName,1,#productNameOrID)==productNameOrID) then
+                        if catalogue.products[pName].isSubscription then
+                            logVerbose("[IAP Badger] Is subscription (" .. productNameOrID .. ") -> true" )
+                        else
+                            logVerbose("[IAP Badger] Is subscription (" .. productNameOrID .. ") -> false" )
+                        end
+                        return catalogue.products[pName].isSubscription
                     end
-                    return catalogue.products[pName].isSubscription
                 end
             end
             logVerbose("[IAP Badger] Is subscription (" .. productNameOrID .. ") -> false" )
@@ -1090,6 +1103,14 @@ verifyReceiptListener = function(event)
 
         -- Check if the server says receipt is valid
         if responseObject ~= nil then
+            -- Amazon receipts contain the actual product purchased
+            if responseObject.term_sku ~= nil then
+                local skuName, skuProduct = getProductFromIdentifier(responseObject.term_sku)
+                if skuName ~= nil then
+                    productName = skuName
+                    product = skuProduct
+                end
+            end
             if responseObject.valid ~= nil and tonumber(responseObject.valid) == 1 then
                 logVerbose("[IAP Badger] Receipt is valid")
                 verified = true
@@ -1133,22 +1154,35 @@ verifyReceipt = function(store, product, productName, transaction)
         return
     end
     local newState = {}
-    newState.token = transaction.token
+    if store == "google" then
+        newState.token = transaction.token
+    end
+    if store == "amazon" then
+        newState.token = transaction.identifier
+    end
     newState.product = product
     newState.productName = productName
     newState.transaction = transaction
     table.insert(asyncState, newState)
-    logVerbose("[IAP Badger] Saved async state for token " .. transaction.token)
-    local packageName = transaction.packageName or "error"
-    local productID = transaction.productIdentifier or "error"
-    local token = transaction.token or "error"
+    logVerbose("[IAP Badger] Saved async state for token " .. newState.token)
+    local productID = transaction.productIdentifier
     local params = {
         headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded"
         },
-        body = "store=" .. store .. "&type=subscription" .. "&app=" .. URLencode(packageName) .. "&product=" .. URLencode(productID) .. "&token=" .. URLencode(token)
+        body = "store=" .. store .. "&type=subscription" .. "&app=" .. URLencode(packageName) .. "&product=" .. URLencode(productID)
     }
+    if (store == "google") then
+        local token = transaction.token
+        params.body = params.body .. "&token=" .. URLencode(token)
+    end
+    if (store == "amazon") then
+        local userid = transaction.userId
+        local receiptid = transaction.identifier
+        params.body = params.body .. "&userid=" .. URLencode(userid) .. "&receiptid=" .. URLencode(receiptid)
+    end
     logVerbose("[IAP Badger] Posting to URL: " .. receiptVerifyURL)
+    logVerbose("[IAP Badger] Body: " .. params.body)
     network.request(receiptVerifyURL, "POST", verifyReceiptListener, params)
 end
 
@@ -1199,11 +1233,13 @@ storeTransactionCallback = function(event)
     --Make a local copy of the transaction
     --Put in empty values for missing variables in the transaction table
     local transaction_vars = {
+        "cancelDate",
         "date",
         "errorString",
         "errorType",
         "identifier",
         "isError",
+        "marketplace",
         "originalDate",
         "originalIdentifier",
         "originalReceipt",
@@ -1212,6 +1248,8 @@ storeTransactionCallback = function(event)
         "receipt",
         "signature",
         "state",
+        "subscriptionEndDate",
+        "subscriptionStartDate",
         "token",
         "transactionIdentifier",
         "userId"
@@ -1236,7 +1274,7 @@ storeTransactionCallback = function(event)
     --appears to be a purchase, then convert the event into a restore
     if ( ((targetStore=="amazon") or targetStore=="google")) and (actionType=="restore") and (transaction.state=="purchased") then
         transaction.state="restored"
-        logVerbose("[IAP Badger] Converting Android purchase event into a restore event")
+        logVerbose("[IAP Badger] Converting " .. targetStore .. " purchase event into a restore event")
     end
 
     --If on the Amazon store, the revoked status is equivalent to refunded
@@ -1325,9 +1363,9 @@ storeTransactionCallback = function(event)
             --Does the library need to raise product ID errors?  Assume yes
             local raiseProductIDError=true
             --But... in test mode, IAP Badger does use a dummy product ID to simulate cancelled and failed purchases, so ignore those
-            if  ( (debugMode) and (transaction.productIdentifier=="debugProductIdentifier")
+            if (debugMode and (transaction.productIdentifier=="debugProductIdentifier")
                 and ((transaction.state=="failed") or (transaction.state=="cancelled")) ) then
-                raiseProductIDError=false;
+                raiseProductIDError=false
             end
             --Raise product ID error
             if (raiseProductIDError) then
@@ -1356,7 +1394,7 @@ storeTransactionCallback = function(event)
 
     ---------------------------------
     -- Handle refunds (Android-based machines only)
-    -- Refunds always follow a call to store.restore(); refunds shese should be silent, and will not initiate any callback.
+    -- Refunds always follow a call to store.restore(); refunds should be silent, and will not initiate any callback.
 
     --Refunds on Amazon
     --  An amazon refund (revoke) can follow a restore callback - in which case, the refund should be ignored.
@@ -1459,15 +1497,15 @@ storeTransactionCallback = function(event)
         local isSubscription = getIsSubscription(productName)
 
         -- Apple subscriptions can use the receipt data to determine subscription end date
-        local receiptData = nil
+        local appleReceiptData = nil
         transaction.subscriptionEndDate = 0
         if isSubscription and targetStore == "apple" then
             if store.receiptAvailable() then
-                receiptData = store.receiptDecrypted()
-                if receiptData ~= nil and receiptData.in_app ~= nil then
+                appleReceiptData = store.receiptDecrypted()
+                if appleReceiptData ~= nil and appleReceiptData.in_app ~= nil then
                     logVerbose("[IAP Badger] ----------- Receipt Start ---------")
                     local maxExpiresDate = 0
-                    for ri, receiptDetails in ipairs(receiptData.in_app) do
+                    for ri, receiptDetails in ipairs(appleReceiptData.in_app) do
                         if receiptDetails.product_id == product.productNames.apple then
                             logVerbose("[IAP Badger] Receipt #" .. ri .. " for: " .. receiptDetails.product_id .. " expires=" .. receiptDetails.expires_date)
                             if receiptDetails.expires_date > maxExpiresDate and receiptDetails.cancellation_date == 0 then
@@ -1497,6 +1535,25 @@ storeTransactionCallback = function(event)
                 else
                     print("[IAP Badger] ************************************")
                     print("[IAP Badger] ERROR receiptVerifyURL must be supplied during init for Google subscription receipt verification")
+                    print("[IAP Badger] ************************************")
+                end
+            else
+                print("[IAP Badger] ************************************")
+                print("[IAP Badger] ERROR Receipt data was blank")
+                print("[IAP Badger] ************************************")
+            end
+        end
+
+        -- Amazon subscriptions require server side verification to determine subscription end date
+        if isSubscription and targetStore == "amazon" then
+            if transaction.receipt ~= nil then
+                if receiptVerifyURL ~= nil then
+                    logVerbose("[IAP Badger] Starting async Amazon subscription receipt verification")
+                    receiptVerificationInProgress = true
+                    verifyReceipt("amazon", product, productName, transaction)
+                else
+                    print("[IAP Badger] ************************************")
+                    print("[IAP Badger] ERROR receiptVerifyURL must be supplied during init for Amazon subscription receipt verification")
                     print("[IAP Badger] ************************************")
                 end
             else
@@ -1866,6 +1923,9 @@ local function init(options)
     if (options.catalogue==nil) then
         error("[IAP Badger] Init - no catalogue provided")
     end
+    if (options.package==nil) then
+        error("[IAP Badger] Init - no package name provided")
+    end
 
     --Verbose debug info?
     if (options.verboseDebugOutput) then
@@ -1892,6 +1952,7 @@ local function init(options)
 
     --Get a copy of the products table
     catalogue=options.catalogue
+    packageName=options.package
     --Filename
     if (options.filename) then
         filename=options.filename
