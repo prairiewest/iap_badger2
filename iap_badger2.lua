@@ -339,7 +339,7 @@ local function saveToString(t)
     local contents = json.encode(t)
     --If a salt was specified, add a hash to the start of the data.
     --Only include a salt if a non-empty table was provided
-    if (salt~=nil) and (tableIsEmpty(t)==false) then
+    if salt and not tableIsEmpty(t) then
         --Create hash
         local hash = crypto.digest(crypto.md5, salt .. contents)
         --Append to contents
@@ -492,10 +492,10 @@ local function refactorProperty(rObject, propertyName, propertyValue)
         if (value.name==propertyName) then
            --Refactor the property name (if one was given)
            local refactoredName = propertyName
-           if (value.refactoredName~=nil) then refactoredName=value.refactoredName end
+           if value.refactoredName then refactoredName=value.refactoredName end
            --Refactor the value (if a function is provided)
            local refactoredValue = propertyValue
-           if (value.refactorFunction~=nil) then refactoredValue = value.refactorFunction(propertyValue) end
+           if value.refactorFunction then refactoredValue = value.refactorFunction(propertyValue) end
            --Return the values
            return refactoredName, refactoredValue
         end
@@ -524,10 +524,10 @@ local function defactorProperty(rObject, propertyName, propertyValue)
         if (value.refactoredName==propertyName) then
            --Defactor the property name (if one was given)
            local defactoredName = propertyName
-           if (value.name~=nil) then defactoredName=value.name end
+           if value.name then defactoredName=value.name end
            --Defactor the value (if a function is provided)
            local defactoredValue = propertyValue
-           if (value.defactorFunction~=nil) then defactoredValue = value.defactorFunction(propertyValue) end
+           if value.defactorFunction then defactoredValue = value.defactorFunction(propertyValue) end
            --Return the values
            return defactoredName, defactoredValue
         end
@@ -560,9 +560,9 @@ local function createRefactoredInventory()
         local refactorObject = findNameInRefactorTable(key)
 
         --If it does, then refactor
-        if refactorObject~=nil then
+        if refactorObject then
             --Change the name of the object
-            if refactorObject.refactoredName~=nil then refactoredName = refactorObject.refactoredName end
+            if refactorObject.refactoredName then refactoredName = refactorObject.refactoredName end
             --Iterate through the properties
             for pKey, pValue in pairs(values) do
                 --Spare table to hold refactored values
@@ -596,7 +596,7 @@ local function createDefactoredInventory(inventoryIn)
         local refactorObject = findRefactoredNameInRefactorTable(key)
 
         --If it does, then refactor
-        if (refactorObject~=nil) then
+        if refactorObject then
             --Change the name of the object
             defactoredName = refactorObject.name
             --Iterate through the properties
@@ -910,7 +910,7 @@ local function setDebugMode(mode, store)
 
     --Copy in the debug store (if one was specified, and running on the simulator).  Ignore this on devices.
     if (system.getInfo("environment")=="simulator") then
-        if (store~=nil) then debugStore=store else debugStore="apple" end
+        if store then debugStore=store else debugStore="apple" end
         storeName = storeNames[debugStore]
     end
 
@@ -972,7 +972,7 @@ local function getProductFromIdentifier(id)
     if catalogue and catalogue.products then
         for key, value in pairs(catalogue.products) do
             --If this product has a store product names table...
-            if (value.productNames~=nil) then
+            if value.productNames then
                 --If this product has an entry in the correct store for the item that has been purchased...
                 local thisProdName = value.productNames[searchStore]
                 local isSub = false; if value.isSubscription then isSub = true; end
@@ -1065,7 +1065,7 @@ end
 
 local function executeInitQueue()
     --If the queue contains something...
-    if initQueue~=nil then
+    if initQueue then
         for key, item in pairs(initQueue) do
             --Load products
             if item['name']=="loadProducts" then
@@ -1160,13 +1160,13 @@ verifyReceiptListener = function(event)
 
         if verified == true then
             --Valid receipt, call the user specified purchase function
-            if product and product.onPurchase~=nil then
+            if product and product.onPurchase then
                 logVerbose("[IAP Badger] Calling user defined purchase listener")
                 product.onPurchase(productName, transaction)
                 logVerbose("[IAP Badger] Returned from user defined purchase listener")
             end
             --Valid receipt, call the user specified listener to call after this transaction
-            if transaction and transaction.state=="purchased" and postStoreTransactionCallbackListener~=nil then
+            if transaction and transaction.state=="purchased" and postStoreTransactionCallbackListener then
                 logVerbose("[IAP Badger] Calling user defined purchase listener")
                 postStoreTransactionCallbackListener(productName, transaction)
                 logVerbose("[IAP Badger] Returned from user defined purchase listener")
@@ -1387,7 +1387,7 @@ storeTransactionCallback = function(event)
         print ("[IAP Badger] Converting store product ID " .. transaction.productIdentifier .. " to catalogue product name.")
     end
     local productName, product = getProductFromIdentifier(transaction.productIdentifier)
-    if verboseDebugOutput and productName~=nil then
+    if verboseDebugOutput and productName then
         print ("[IAP Badger]  " .. transaction.productIdentifier .. " ==> " .. productName)
     end
 
@@ -1448,7 +1448,7 @@ storeTransactionCallback = function(event)
     if transaction.state=="refunded" then
         logVerbose("[IAP Badger] Handling refunded event")
         --User callback
-        if product and product.onRefund~=nil then product.onRefund(productName, transaction) end
+        if product and product.onRefund then product.onRefund(productName, transaction) end
         --Tell the store we're finished
         if not debugMode then store.finishTransaction(event.transaction) end
         --Return
@@ -1461,7 +1461,7 @@ storeTransactionCallback = function(event)
     -- The other transaction states (failed, cancelled, purchase, restore) can be noisy
     -- so cancel any restore purchases cancel timer.
 
-    if (restorePurchasesTimer~=nil) then
+    if restorePurchasesTimer then
         timer.cancel(restorePurchasesTimer)
         restorePurchasesTimer=nil
     end
@@ -1470,9 +1470,9 @@ storeTransactionCallback = function(event)
     -- Deal with problems first
 
     --Failed transactions
-    if (transaction.state=="failed") then
+    if transaction.state=="failed" then
         logVerbose("[IAP Badger] Transaction FAILED")
-        if (transactionFailedListener~=nil) then
+        if transactionFailedListener then
             logVerbose("[IAP Badger] Calling failed listener")
             transactionFailedListener(productName, event.transaction)
             logVerbose("[IAP Badger] Returned from failed listener")
@@ -1488,7 +1488,7 @@ storeTransactionCallback = function(event)
     --User cancelled transaction
     if (transaction.state=="cancelled") then
         logVerbose("[IAP Badger] Transaction CANCELLED BY USER")
-        if (transactionCancelledListener~=nil) then
+        if transactionCancelledListener then
             logVerbose("[IAP Badger] Calling cancel listener")
             transactionCancelledListener(productName, event.transaction)
             logVerbose("[IAP Badger] Returned from cancel listener")
@@ -1606,7 +1606,7 @@ storeTransactionCallback = function(event)
         end
 
         --Call the user specified purchase function, only if receipt verification is not in progress
-        if product and product.onPurchase~=nil and receiptVerificationInProgress==false then
+        if product and product.onPurchase and not receiptVerificationInProgress then
             logVerbose("[IAP Badger] Calling user defined purchase listener")
             product.onPurchase(productName, transaction)
             logVerbose("[IAP Badger] Returned from user defined purchase listener")
@@ -1619,14 +1619,14 @@ storeTransactionCallback = function(event)
         end
         --If the user specified a listener to call after this transaction, call it only if
         --receipt verification is not in progress
-        if (transaction.state=="purchased") and (postStoreTransactionCallbackListener~=nil) and (receiptVerificationInProgress==false) then
+        if transaction.state=="purchased" and postStoreTransactionCallbackListener and not receiptVerificationInProgress then
             logVerbose("[IAP Badger] Calling user defined purchase listener")
             postStoreTransactionCallbackListener(productName, transaction)
             logVerbose("[IAP Badger] Returned from user defined purchase listener")
         end
 
         --Restore events - only process for non-consumables unless instructed to by the user
-        if transaction.state=="restored" and postRestoreCallbackListener~=nil then
+        if transaction.state=="restored" and postRestoreCallbackListener then
             --Default to processing the event
             local processEvent=true
             --Don't process consumables
@@ -1780,7 +1780,7 @@ restore=function(emptyFlag, postRestoreListener, timeoutFunction, cancelTime)
         --Start restore
         store.restore()
         --Set up a timeout if the user specified a timeoutFunction to call
-        if (timeoutFunction~=nil) then
+        if timeoutFunction then
             logVerbose("[IAP Badger] Timeout function specified, placing on timer...")
             restorePurchasesTimer=timer.performWithDelay(cancelTime, function()
                 --Kill the first restored item flag and fail callback pointer
@@ -1983,9 +1983,9 @@ local function init(options)
 
     --Converting Google failed purchase events to successful events (when purchase events fail because the user already owns the item, like on iOS)?
     --If the flag is set in the options...
-    if (options.googleConvertOwnedPurchaseEvents~=nil) then
+    if options.googleConvertOwnedPurchaseEvents then
         --Set to true or false
-        if (options.googleConvertOwnedPurchaseEvents) then
+        if options.googleConvertOwnedPurchaseEvents then
           googleConvertOwnedPurchaseEvents = true
         else
           googleConvertOwnedPurchaseEvents = false
@@ -2013,7 +2013,7 @@ local function init(options)
     --Load in the salt (optional)
     salt=options.salt
     --Bad hash response
-    if (options.badHashResponse~=nil) then badHashResponse=options.badHashResponse end
+    if options.badHashResponse then badHashResponse=options.badHashResponse end
     --Transaction failed / cancelled listeners (both optional)
     transactionFailedListener = options.failedListener
     transactionCancelledListener = options.cancelledListener
@@ -2051,7 +2051,7 @@ local function init(options)
     end
 
     --Set receiptVerifyURL, and show an error if missing when needed
-    if (options.receiptVerifyURL~=nil) then receiptVerifyURL=options.receiptVerifyURL end
+    if options.receiptVerifyURL then receiptVerifyURL=options.receiptVerifyURL end
     for key, product in pairs(catalogue.products) do
         if getIsSubscription(key) == true and receiptVerifyURL == nil and targetStore == "google" then
             print("[IAP Badger] ************************************")
@@ -2093,7 +2093,7 @@ local function init(options)
         --Set debug mode
         debugMode=true
         --If a debug store to test was passed, use that
-        if (options.debugStore~=nil) then debugStore=options.debugStore else debugStore="apple" end
+        if options.debugStore then debugStore=options.debugStore else debugStore="apple" end
         logVerbose ("[IAP Badger] Simulating target store: " .. debugStore)
         storeName = storeNames[targetStore]
         --If debug store is google, create a delay before completing initialisation to simulate asynchronous store.init on real device
@@ -2209,7 +2209,7 @@ fakeRestoreListener=function(event)
         --Timeout is easy to deal with
         if (index==1) then
             --Set up a timeout if the user specified a timeoutFunction to call
-            if (fakeRestoreTimeoutFunction~=nil) then restorePurchasesTimer=timer.performWithDelay(fakeRestoreTimeoutTime,
+            if fakeRestoreTimeoutFunction then restorePurchasesTimer=timer.performWithDelay(fakeRestoreTimeoutTime,
                 function()
                     --Kill the first restored item flag and fail callback pointer
                     firstRestoredItem=nil
@@ -2379,19 +2379,19 @@ local function fakeLoadProducts(callback)
             --Create faked data
             local data={}
             --Use a title specified by the user (or a the product key in the catalogue if none is provided)
-            if (value.simulatorTitle~=nil) then
+            if value.simulatorTitle then
                 data.title=value.simulatorTitle
             else
                 data.title = key
             end
             --Use the item description specified by the user (or a placeholder if none is provided)
-            if (value.simulatorDescription~=nil) then
+            if value.simulatorDescription then
                 data.description=value.simulatorDescription
             else
                 data.description = "Product description goes here."
             end
             --Use the item price specified by the user (or a placehold if none is provided)
-            if (value.simulatorPrice~=nil) then
+            if value.simulatorPrice then
                 data.localizedPrice = value.simulatorPrice
             else
                 data.localizedPrice = "$0.99"
@@ -2419,7 +2419,7 @@ local function fakeLoadProducts(callback)
     end
 
     --If a user specified callback function was specified, call it
-    if (loadProductsUserCallback~=nil) then
+    if loadProductsUserCallback then
         logVerbose("[IAP Badger] Calling user defined listener function")
         callback(eventData, loadProductsCatalogue)
         logVerbose("[IAP Badger] Returned from user defined listener function")
@@ -2484,7 +2484,7 @@ loadProductsCallback = function(event)
     loadProductsFinished=true
 
     --If a user specified callback function was specified, call it
-    if (loadProductsUserCallback~=nil) then
+    if loadProductsUserCallback then
         logVerbose("[IAP Badger] Calling user defined listener function")
         loadProductsUserCallback(event, loadProductsCatalogue)
         logVerbose("[IAP Badger] Returned from user defined listener function")
