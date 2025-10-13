@@ -94,8 +94,10 @@ iap.init(iapOptions)
 
 local function purchaseListener(product)
     --Remove the spinner
-    spinner:removeSelf()
-    spinner=nil
+    if spinner then
+        spinner:removeSelf()
+        spinner=nil
+    end
     
     --Any changes to the value in 'coins' in the inventory has been taken care of.
     --Update the text object to reflect how many coins are now in the user's inventory
@@ -110,7 +112,7 @@ local function purchaseListener(product)
 end
 
 --Purchase function
-buyCoins=function(event)
+local function buyCoins(event)
     
     --Place a progress spinner on screen and tell the user the app is contating the store
     local spinnerBackground = display.newRect(160,240,360,600)
