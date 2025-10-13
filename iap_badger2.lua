@@ -327,7 +327,7 @@ local ValidLocations = {
 }
 
 local function tableIsEmpty (self)
-    if (self==nil) then return true end
+    if not self then return true end
     for _, _ in pairs(self) do
         return false
     end
@@ -370,30 +370,29 @@ local function saveTable(t, filename, location)
 end
 
 local function loadInventoryFromString(contents)
-
     --If the contents start with a hash...
-    if (contents:sub(1,1)~="{") then
+    if contents:sub(1,1)~="{" then
         --Find the start of the contents...
         local delimeter = contents:find("{")
         --If no contents were found, return an empty table whatever the hash
-        if (delimeter==nil) then return nil end
+        if not delimeter then return nil end
         local hash = contents:sub(1, delimeter-1)
         contents = contents:sub(delimeter)
         --Calculate a hash for the contents
         local calculatedHash = nil
-        if (salt) then
+        if salt then
             calculatedHash = crypto.digest(crypto.md5, salt .. contents)
         else
             calculatedHash = crypto.digest(crypto.md5, contents)
         end
         --If the two do not match, reject the file
-        if (hash~=calculatedHash) then
-            if (badHashResponse=="emptyInventory") then
+        if hash~=calculatedHash then
+            if badHashResponse=="emptyInventory" then
                 return nil
-            elseif (badHashResponse=="errorMessage") then
+            elseif badHashResponse=="errorMessage" then
                 native.showAlert("Error", "File error.", {"Ok"})
                 return nil
-            elseif (badHashResponse=="error" or badHashResponse==nil) then
+            elseif not badHashResponse or badHashResponse=="error" then
                 print("[IAP Badger] File error occurred ***")
                 return nil
             else
@@ -448,7 +447,7 @@ public.printInventory = printInventory
 local function findNameInRefactorTable(name)
 
     --If no refactor table is available, just return the name that was passed - there is no refactoring to be done
-    if (refactorTable==nil) then return nil end
+    if not refactorTable then return nil end
 
     --For every item in the table
     for key, value in pairs(refactorTable) do
@@ -463,7 +462,7 @@ end
 local function findRefactoredNameInRefactorTable(rName)
 
     --If no refactor table is available, just return the name that was passed - there is no refactoring to be done
-    if (refactorTable==nil) then return nil end
+    if not refactorTable then return nil end
 
     --For every item in the table
     for key, value in pairs(refactorTable) do
@@ -481,10 +480,9 @@ end
 --  value - the value to refactor
 --Returns: refactoredPropertyName, refactoredPropertyValue
 local function refactorProperty(rObject, propertyName, propertyValue)
-
     --If there is no property information in the table, return the values that were given (there
     --is no refactoring to be done)
-    if (rObject.properties==nil) then return propertyName, propertyValue end
+    if not rObject.properties then return propertyName, propertyValue end
 
     --Loop through the properties refactoring information to find the property
     for key, value in pairs(rObject.properties) do
@@ -513,10 +511,9 @@ end
 --  value - the value to defactor
 --Returns: defactoredPropertyName, defactoredPropertyValue
 local function defactorProperty(rObject, propertyName, propertyValue)
-
     --If there is no property information in the table, return the values that were given (there
     --is no refactoring to be done)
-    if (rObject.properties==nil) then return propertyName, propertyValue end
+    if not rObject.properties then return propertyName, propertyValue end
 
     --Loop through the properties refactoring information to find the property
     for key, value in pairs(rObject.properties) do
@@ -543,7 +540,7 @@ end
 --Creates a recfactored inventory
 local function createRefactoredInventory()
     --If the refactor table is nil, return the inventory
-    if refactorTable==nil then return inventory end
+    if not refactorTable then return inventory end
 
     --Create a new table that will be copy of the inventory table
     local refactoredInventory = {}
@@ -640,22 +637,20 @@ local function randomiseInventory()
 end
 
 --Saves the inventory contents
---asString - if nil, the inventory will be saved on the user's device; if set to true,
---will return a string representing the inventory that can be used for saving the inventory elsewhere
---(ie. on the cloud etc.)
+--asString - if true, will return a string representing the inventory that can be used for saving the inventory elsewhere
+--           otherwise the inventory will be saved on the user's device
 local function saveInventory(asString)
     --Ignore if no filename given
-    if (filename==nil) then return end
+    if not filename then return end
     --Create random values for random products
     randomiseInventory()
     --Refactor the inventory
     local refactoredInventory = createRefactoredInventory()
     --Save contents
-    if (asString==nil) then
+    if asString then
+        reurn saveToString(refactoredInventory)
+    else
         saveTable(refactoredInventory, filename)
-    else if (asString==true) then
-        return saveToString(refactoredInventory)
-        end
     end
 end
 public.saveInventory = saveInventory
@@ -666,16 +661,16 @@ public.saveInventory = saveInventory
 --this for loading from the cloud etc.
 local function loadInventory(inventoryString)
     --If no filename set, ignore
-    if (filename==nil) then return end
+    if not filename then return end
     --Attempt to load inventory
     local refactoredInventory=nil
-    if (inventoryString==nil) then
+    if not inventoryString then
         refactoredInventory = loadTable(filename)
     else
         refactoredInventory = loadInventoryFromString(inventoryString)
     end
     --If inventory does not exists, create one
-    if (refactoredInventory==nil) then
+    if not refactoredInventory then
         inventory={}
     else
         inventory=createDefactoredInventory(refactoredInventory)
@@ -722,7 +717,7 @@ public.isInInventory = isInInventory
 --Returns the count of different itemt types in the inventory
 local function inventoryItemCount()
     local ctr=0
-    if (inventory==nil) then return 0 end
+    if not inventory then return 0 end
     for key, value in pairs(inventory) do
         ctr=ctr+1
     end
@@ -795,7 +790,7 @@ local function addToInventory(productName, addValue)
 
     --Adding a consumable so use a quantity
     --Assume a quantity of 1, if no value if passed
-    if (addValue==nil) then addValue=1 end
+    if not addValue then addValue=1 end
 
     --Does the current item already exist in the inventory?
     local currentValue=getInventoryValue(productName)
@@ -848,7 +843,7 @@ local function removeFromInventory(productName, subValue)
     --If the object is a consumable...
     if (productType=="consumable") then
         --If no quantity is given, assume a quantity of 1
-        if (subValue==nil) then subValue=1 end
+        if not subValue then subValue=1 end
         --Does the current item already exist in the inventory?
         local currentQuantity=getInventoryValue(productName)
         if (subValue=="all") then subValue=currentQuantity end
@@ -881,10 +876,10 @@ public.removeFromInventory = removeFromInventory
 --  value_in: the value to set it to
 local function setInventoryValue(productName, value_in)
     if inventory then
-        if inventory[productName]==nil then
-            inventory[productName]={ value = value_in }
-        else
+        if inventory[productName] then
             inventory[productName].value = value_in
+        else
+            inventory[productName]={ value = value_in }
         end
     end
 end
@@ -1045,7 +1040,7 @@ end
 
 local function checkPreviousTransactionsForProduct(productIdentifier, transactionIdentifier)
     --If the table is empty, return false
-    if previouslyRestoredTransactions==nil then
+    if not previouslyRestoredTransactions then
         return false
     end
 
@@ -1395,7 +1390,7 @@ storeTransactionCallback = function(event)
     if (transaction.state~="failed") and (transaction.state~="cancelled") then
         --At this point, we could be in a purchase, refund or restored transaction - so a product ID is essential
         --If the product has not been identified, something has gone wrong
-        if product==nil then
+        if not product then
             --Does the library need to raise product ID errors?  Assume yes
             local raiseProductIDError=true
             --But... in test mode, IAP Badger does use a dummy product ID to simulate cancelled and failed purchases, so ignore those
@@ -1757,7 +1752,7 @@ restore=function(emptyFlag, postRestoreListener, timeoutFunction, cancelTime)
     if (emptyFlag==true) then emptyInventoryOfNonConsumableItems() end
 
     --If no time passed, use a reasonable time (10s)
-    if (cancelTime==nil) then cancelTime=10000 end
+    if not cancelTime then cancelTime=10000 end
 
     --store.restore does not provide a callback if there are no products to restore - the code
     --is just left hanging.  Call the userdefined timeoutFunction after the specified amount of
@@ -1959,13 +1954,13 @@ public.purchase=purchase
 local function init(options)
 
     --Some options are mandatory
-    if (options==nil) then
+    if not options then
         error("[IAP Badger] Init - no options table provided")
     end
-    if (options.catalogue==nil) then
+    if not options.catalogue then
         error("[IAP Badger] Init - no catalogue provided")
     end
-    if (options.package==nil) then
+    if not options.package then
         error("[IAP Badger] Init - no package name provided")
     end
 
@@ -2341,12 +2336,12 @@ local function printLoadProductsCatalogue()
     print("printLoadProductsCatalogue output:")
     print("----------------------------------")
 
-    if loadProductsCatalogue==nil then
+    if not loadProductsCatalogue then
         print("nil")
         return
     end
     --Provide a useful feedback message if getLoadProductsCatalogue() has never been called.
-    if loadProductsFinished==nil then
+    if not loadProductsFinished then
         print("getLoadProductsCatalogue() not yet called - loadProductsCatalogue is empty")
         return
     end
@@ -2413,7 +2408,7 @@ local function fakeLoadProducts(callback)
     loadProductsFinished=true
 
     --If no user callback then quit now
-    if (loadProductsUserCallback==nil) then
+    if not loadProductsUserCallback then
         logVerbose("[IAP Badger] Leaving fakeLoadProductsCallback")
         return
     end
