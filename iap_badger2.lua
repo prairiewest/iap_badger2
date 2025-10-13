@@ -1009,7 +1009,7 @@ local function getIsSubscription(productNameOrID)
     if targetStore=="simulator" then searchStore=debugStore end
     if searchStore == "google" or searchStore == "apple" or searchStore == "amazon" then
         -- First search for a product name match
-        if catalogue.products[productNameOrID] ~= nil and catalogue.products[productNameOrID].isSubscription ~= nil then
+        if catalogue.products[productNameOrID] and catalogue.products[productNameOrID].isSubscription then
             if catalogue.products[productNameOrID].isSubscription then
                 logVerbose("[IAP Badger] Is subscription (" .. productNameOrID .. ") -> true" )
             else
@@ -1019,7 +1019,7 @@ local function getIsSubscription(productNameOrID)
         else
             -- Not a product name, search for a product ID match
             for pName, pProd in pairs(catalogue.products) do
-                if pProd.productNames ~= nil then
+                if pProd.productNames then
                     local thisProdName = pProd.productNames[searchStore]
                     -- Amazon subscription product IDs are substrings of the termSku
                     if (thisProdName == productNameOrID) or (searchStore=="amazon" and string.sub(thisProdName,1,#productNameOrID)==productNameOrID) then
@@ -1105,9 +1105,9 @@ verifyReceiptListener = function(event)
     else
         logVerbose("[IAP Badger] Call to verification server is OK; response: ")
         debugPrint(event.response)
-        if event.response ~= nil then
+        if event.response then
             responseObject = json.decode(event.response)
-            if responseObject ~= nil and asyncState then
+            if responseObject and asyncState then
                 for aIndex,aState in pairs(asyncState) do
                     if aState.token == responseObject.token then
                         token = responseObject.token
@@ -1123,26 +1123,26 @@ verifyReceiptListener = function(event)
 
         if product == nil then
             print("[IAP Badger] ERROR Did not find saved async state for this token - stopping receipt verification")
-            if token ~= nil then
+            if token then
                 print("[IAP Badger] Token not found is: " .. token)
             end
             return
         end
 
         -- Check if the server says receipt is valid
-        if responseObject ~= nil then
+        if responseObject then
             -- Amazon receipts contain the actual product purchased
-            if responseObject.term_sku ~= nil then
+            if responseObject.term_sku then
                 local skuName, skuProduct = getProductFromIdentifier(responseObject.term_sku)
-                if skuName ~= nil then
+                if skuName then
                     productName = skuName
                     product = skuProduct
                 end
             end
-            if responseObject.valid ~= nil and tonumber(responseObject.valid) == 1 then
+            if responseObject.valid and tonumber(responseObject.valid) == 1 then
                 logVerbose("[IAP Badger] Receipt is valid")
                 verified = true
-                if responseObject.sub_end_date ~= nil and responseObject.sub_end_date > 0 then
+                if responseObject.sub_end_date and responseObject.sub_end_date > 0 then
                     transaction.subscriptionEndDate = responseObject.sub_end_date
                     logVerbose("[IAP Badger] Found sub end date: " .. responseObject.sub_end_date)
                 end
@@ -1317,7 +1317,7 @@ storeTransactionCallback = function(event)
     -- Google Play errorType 6 means "failed, retry"
     -- See: https://developer.android.com/reference/com/android/billingclient/api/BillingClient.BillingResponseCode#ERROR()
     -- As a precaution against converting failed transactions into successful purchases, we try to consume the product here
-    if targetStore=="google" and transaction.state=="failed" and transaction.errorType ~= nil and transaction.errorType==6 then
+    if targetStore=="google" and transaction.state=="failed" and transaction.errorType and transaction.errorType==6 then
         retryCount = retryCount + 1
         if retryCount <= 3 then
             logVerbose("[IAP Badger] Consuming Google product as failsafe for failed transaction.")
@@ -1340,7 +1340,7 @@ storeTransactionCallback = function(event)
 
     -- If on Google Play, and this purchase failed because the user already owns the item, convert the failed event into a restore event
     -- See: https://developer.android.com/reference/com/android/billingclient/api/BillingClient.BillingResponseCode#ITEM_ALREADY_OWNED()
-    if targetStore=="google" and transaction.state=="failed" and transaction.errorType ~= nil and transaction.errorType==7 then
+    if targetStore=="google" and transaction.state=="failed" and transaction.errorType and transaction.errorType==7 then
         --If converting these events to successful events (like on iOS)...
         if googleConvertOwnedPurchaseEvents then
             if getIsSubscription(googleLastPurchaseProductID) == false then
@@ -1533,7 +1533,7 @@ storeTransactionCallback = function(event)
         if isSubscription and targetStore == "apple" then
             if store.receiptAvailable() then
                 appleReceiptData = store.receiptDecrypted()
-                if appleReceiptData ~= nil and appleReceiptData.in_app ~= nil then
+                if appleReceiptData and appleReceiptData.in_app then
                     logVerbose("[IAP Badger] ----------- Receipt Start ---------")
                     local maxExpiresDate = 0
                     for ri, receiptDetails in ipairs(appleReceiptData.in_app) do
@@ -1560,8 +1560,8 @@ storeTransactionCallback = function(event)
 
         -- Google subscriptions require server side verification to determine subscription end date
         if isSubscription and targetStore == "google" then
-            if transaction.receipt ~= nil then
-                if receiptVerifyURL ~= nil then
+            if transaction.receipt then
+                if receiptVerifyURL then
                     logVerbose("[IAP Badger] Starting async Google subscription receipt verification")
                     receiptVerificationInProgress = true
                     verifyReceipt("google", product, productName, transaction)
@@ -1579,8 +1579,8 @@ storeTransactionCallback = function(event)
 
         -- Amazon subscriptions require server side verification to determine subscription end date
         if isSubscription and targetStore == "amazon" then
-            if transaction.receipt ~= nil then
-                if receiptVerifyURL ~= nil then
+            if transaction.receipt then
+                if receiptVerifyURL then
                     logVerbose("[IAP Badger] Starting async Amazon subscription receipt verification")
                     receiptVerificationInProgress = true
                     verifyReceipt("amazon", product, productName, transaction)
@@ -2565,7 +2565,7 @@ loadProducts=function(callback)
     local listOfSubscriptions={}
     if catalogue and catalogue.products then
         for key, thisProduct in pairs(catalogue.products) do
-            if thisProduct.productNames[targetStore] ~= nil then
+            if thisProduct.productNames[targetStore] then
                 logVerbose("[IAP Badger] Preparing loadProducts for product ID " .. thisProduct.productNames[targetStore])
                 if targetStore == "google" and getIsSubscription(key) then
                     listOfSubscriptions[#listOfSubscriptions+1]=thisProduct.productNames[targetStore]
