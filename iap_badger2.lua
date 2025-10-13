@@ -697,18 +697,16 @@ public.checkProductExists = checkProductExists
 --Returns the value of the current product inside the inventory (eg. a quantity / boolean)
 --If the item is not in the inventory, this returns nil.
 local function getInventoryValue(productName)
-    if inventory == nil then
-        return nil
-    end
-    if inventory[productName]==nil then
+    if inventory and inventory[productName] then
+        return inventory[productName].value
+    else
         if catalogue and catalogue.inventoryItems then
             if catalogue.inventoryItems[productName] and catalogue.inventoryItems[productName].reportMissingAsZero then
                 return 0
             end
         end
-        return nil
     end
-    return inventory[productName].value
+    return nil
 end
 public.getInventoryValue = getInventoryValue
 
