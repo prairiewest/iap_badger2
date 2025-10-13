@@ -687,11 +687,10 @@ public.loadInventory = loadInventory
 --Returns true if the specified product exists
 local function checkProductExists(productName)
     --Does the product name exist in the product table?
-    if catalogue and catalogue.products and catalogue.products[productName]==nil then
-        return false
-    else
+    if catalogue and catalogue.products and catalogue.products[productName] then
         return true
     end
+    return false
 end
 public.checkProductExists = checkProductExists
 
