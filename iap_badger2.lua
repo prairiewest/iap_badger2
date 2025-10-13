@@ -444,13 +444,12 @@ public.printInventory = printInventory
 
 --Searches for the inventory item with the given name in the refactor table.  If it does not exist, then nil is returned.
 local function findNameInRefactorTable(name)
-
     --If no refactor table is available, just return the name that was passed - there is no refactoring to be done
     if not refactorTable then return nil end
 
     --For every item in the table
     for key, value in pairs(refactorTable) do
-        if (value.name==name) then return value end
+        if value.name==name then return value end
     end
 
     return nil
@@ -459,17 +458,15 @@ end
 
 --Searches for the inventory item with the given refactored name in the refactor table.  If it does not exist, then nil is returned.
 local function findRefactoredNameInRefactorTable(rName)
-
     --If no refactor table is available, just return the name that was passed - there is no refactoring to be done
     if not refactorTable then return nil end
 
     --For every item in the table
     for key, value in pairs(refactorTable) do
-        if (value.refactoredName==rName) then return value end
+        if value.refactoredName==rName then return value end
     end
 
     return nil
-
 end
 
 
@@ -486,7 +483,7 @@ local function refactorProperty(rObject, propertyName, propertyValue)
     --Loop through the properties refactoring information to find the property
     for key, value in pairs(rObject.properties) do
         --If this is the key specified by the user...
-        if (value.name==propertyName) then
+        if value.name==propertyName then
            --Refactor the property name (if one was given)
            local refactoredName = propertyName
            if value.refactoredName then refactoredName=value.refactoredName end
@@ -517,7 +514,7 @@ local function defactorProperty(rObject, propertyName, propertyValue)
     --Loop through the properties refactoring information to find the property
     for key, value in pairs(rObject.properties) do
         --If this is the key specified by the user...
-        if (value.refactoredName==propertyName) then
+        if value.refactoredName==propertyName then
            --Defactor the property name (if one was given)
            local defactoredName = propertyName
            if value.name then defactoredName=value.name end
@@ -623,11 +620,11 @@ local function randomiseInventory()
             --If the product is specified in the inventory...
             if product then
                 --If the product type is random-integer...
-                if (product.productType=="random-integer") then
+                if product.productType=="random-integer" then
                     value.value=math.random(product.randomLow, product.randomHigh)
-                elseif (product.productType=="random-decimal") then
+                elseif product.productType=="random-decimal" then
                     value.value=math.random(product.randomLow, product.randomHigh)+(1/(math.random(1,1000)))
-                elseif (product.productType=="random-hex") then
+                elseif product.productType=="random-hex" then
                     value.value=string.format("0x%x", math.random(product.randomLow, product.randomHigh))
                 end
             end
@@ -782,7 +779,7 @@ local function addToInventory(productName, addValue)
     end
 
     --If non-consumable, always set product value to true
-    if (productType=="non-consumable") then
+    if productType=="non-consumable" then
         inventory[productName]={value=true}
         return
     end
@@ -857,7 +854,7 @@ local function removeFromInventory(productName, subValue)
             --Remove the item
             inventory[productName].value = currentQuantity-subValue
             --If there are none of the item left, remove it from the inventory
-            if (inventory[productName].value==0) then inventory[productName]=nil end
+            if inventory[productName].value==0 then inventory[productName]=nil end
         end
         --Item was removed
         return true
@@ -903,13 +900,13 @@ local function setDebugMode(mode, store)
     debugMode=mode
 
     --Copy in the debug store (if one was specified, and running on the simulator).  Ignore this on devices.
-    if (system.getInfo("environment")=="simulator") then
+    if system.getInfo("environment")=="simulator" then
         if store then debugStore=store else debugStore="apple" end
         storeName = storeNames[debugStore]
     end
 
     --If running on a device, and in debug mode, then make sure user knows
-    if (system.getInfo("environment")~="simulator") and debugMode==true then
+    if system.getInfo("environment")~="simulator" and debugMode then
         native.showAlert("Warning", "Running IAP Badger in debug mode on device", {"Ok"})
     end
 
@@ -939,9 +936,8 @@ local function consumeAllPurchases()
     --Iterate through the product catalogue
     if catalogue and catalogue.products then
         for key, product in pairs(catalogue.products) do
-            --If this product has a google product ID associated with it...
-            if (product.productNames.google) then
-                --...consume it
+            --If this product has a google product ID associated with it, consume it
+            if product.productNames.google then
                 store.consumePurchase(product.productNames.google)
             end
         end
@@ -957,7 +953,7 @@ public.consumeAllPurchases = consumeAllPurchases
 local function getProductFromIdentifier(id)
     --Search the product catalogue for the relevant target store - if running in the simulator, default to iOS.
     local searchStore=targetStore
-    if (targetStore=="simulator") then searchStore=debugStore end
+    if targetStore=="simulator" then searchStore=debugStore end
 
     local productName=nil
     local product=nil
@@ -971,7 +967,7 @@ local function getProductFromIdentifier(id)
                 local thisProdName = value.productNames[searchStore]
                 local isSub = false; if value.isSubscription then isSub = true; end
                 -- Amazon subscription product IDs are substrings of the termSku product ID
-                if (thisProdName==id) or (searchStore=="amazon" and isSub and string.sub(thisProdName,1,#id)==id) then
+                if thisProdName==id or (searchStore=="amazon" and isSub and string.sub(thisProdName,1,#id)==id) then
                     --Return the product name and the product info from the catalogue
                     return key, value
                 end
@@ -987,7 +983,7 @@ local function getAppStoreID(productName)
     --Search for the relevant target store - if running in the simulator,
     --default to iOS.
     local searchStore=targetStore
-    if (targetStore=="simulator") then searchStore=debugStore end
+    if targetStore=="simulator" then searchStore=debugStore end
 
     --Return the correct ID for this product
     if catalogue and catalogue.products then
@@ -1021,7 +1017,7 @@ local function getIsSubscription(productNameOrID)
                 if pProd.productNames then
                     local thisProdName = pProd.productNames[searchStore]
                     -- Amazon subscription product IDs are substrings of the termSku
-                    if (thisProdName == productNameOrID) or (searchStore=="amazon" and string.sub(thisProdName,1,#productNameOrID)==productNameOrID) then
+                    if thisProdName==productNameOrID or (searchStore=="amazon" and string.sub(thisProdName,1,#productNameOrID)==productNameOrID) then
                         if catalogue.products[pName].isSubscription then
                             logVerbose("[IAP Badger] Is subscription (" .. productNameOrID .. ") -> true" )
                         else
@@ -1045,10 +1041,8 @@ local function checkPreviousTransactionsForProduct(productIdentifier, transactio
 
     --Iterate over the table
     for key, value in pairs(previouslyRestoredTransactions) do
-        --If this is the item specified...
-        if (value.productIdentifier==productIdentifier) and
-            (value.transactionIdentifier==transactionIdentifier) then
-            --... indicate item found
+        --If this is the item specified, indicate it was found
+        if value.productIdentifier==productIdentifier and value.transactionIdentifier==transactionIdentifier then
             return true
         end
     end
@@ -1082,7 +1076,7 @@ local function executeInitQueue()
 end
 
 local URLencode = function(str)
-    if (not str) then
+    if not str then
         return str
     end
     str = string.gsub (str, "\n", "\r\n")
@@ -1202,11 +1196,11 @@ verifyReceipt = function(store, product, productName, transaction)
         },
         body = "store=" .. store .. "&type=subscription" .. "&app=" .. URLencode(packageName) .. "&product=" .. URLencode(productID)
     }
-    if (store == "google") then
+    if store == "google" then
         local token = transaction.token
         params.body = params.body .. "&token=" .. URLencode(token)
     end
-    if (store == "amazon") then
+    if store == "amazon" then
         local userid = transaction.userId
         local receiptid = transaction.identifier
         params.body = params.body .. "&userid=" .. URLencode(userid) .. "&receiptid=" .. URLencode(receiptid)
@@ -1226,7 +1220,7 @@ storeTransactionCallback = function(event)
     end
 
     --If this is an init callback (Google IAP)...
-    if (event.name == "init") then
+    if event.name=="init" then
         logVerbose("[IAP Badger] Initialisation event")
         --Record store is initialised
         storeInitialized=true
@@ -1289,7 +1283,7 @@ storeTransactionCallback = function(event)
         end
     end
 
-    if (transaction.state=="") then
+    if transaction.state=="" then
         transaction.state="failed"
         transaction.errorString = "Error accessing " .. targetStore
         transaction.isError = true
@@ -1298,13 +1292,13 @@ storeTransactionCallback = function(event)
 
     --If on the Google or Amazon store, and the last action from the user was to make a restore, and this
     --appears to be a purchase, then convert the event into a restore
-    if ( ((targetStore=="amazon") or targetStore=="google")) and (actionType=="restore") and (transaction.state=="purchased") then
+    if (targetStore=="amazon" or targetStore=="google") and actionType=="restore" and transaction.state=="purchased" then
         transaction.state="restored"
         logVerbose("[IAP Badger] Converting " .. targetStore .. " purchase event into a restore event")
     end
 
     --If on the Amazon store, the revoked status is equivalent to refunded
-    if (targetStore=="amazon") and (transaction.state=="revoked") then
+    if targetStore=="amazon" and transaction.state=="revoked" then
         logVerbose("[IAP Badger] Converting Amazon revoked event into refunded event")
         transaction.state="refunded"
     end
@@ -1321,7 +1315,9 @@ storeTransactionCallback = function(event)
                 timer.performWithDelay(100*retryCount, function()
                     logVerbose("[IAP Badger] Calling consumePurchase now")
                     store.consumePurchase(savedProductIdentifier)
-                    if (debugMode~=true) then store.finishTransaction(event.transaction) end
+                    if not debugMode then
+                        store.finishTransaction(event.transaction)
+                    end
                 end)
             else
                 print( "[IAP Badger] savedProductIdentifier is nil - cannot call consumePurchase" )
@@ -1367,7 +1363,7 @@ storeTransactionCallback = function(event)
     --Search the product catalogue for the relevant target store - if running in the simulator,
     --default to iOS.
     local searchStore=targetStore
-    if (targetStore=="simulator") then searchStore=debugStore end
+    if targetStore=="simulator" then searchStore=debugStore end
 
     --Check product name if not a failed or cancelled event
     --Find the product by using its identifier in the product catalogue
@@ -1378,7 +1374,7 @@ storeTransactionCallback = function(event)
     end
 
     --If this is NOT a 'failed' or 'cancelled' event, handle invalid product IDs
-    if (transaction.state~="failed") and (transaction.state~="cancelled") then
+    if transaction.state~="failed" and transaction.state~="cancelled" then
         --At this point, we could be in a purchase, refund or restored transaction - so a product ID is essential
         --If the product has not been identified, something has gone wrong
         if not product then
@@ -1471,7 +1467,7 @@ storeTransactionCallback = function(event)
     end
 
     --User cancelled transaction
-    if (transaction.state=="cancelled") then
+    if transaction.state=="cancelled" then
         logVerbose("[IAP Badger] Transaction CANCELLED BY USER")
         if transactionCancelledListener then
             logVerbose("[IAP Badger] Calling cancel listener")
@@ -1486,7 +1482,7 @@ storeTransactionCallback = function(event)
         return true
     end
 
-    if (transaction.state=="finished") then
+    if transaction.state=="finished" then
       if not debugMode then store.finishTransaction(event.transaction) end
       logVerbose("[IAP Badger] Finished - leaving storeTransactionCallback")
         return true
@@ -1501,7 +1497,7 @@ storeTransactionCallback = function(event)
     end
 
     --If this is a restore callback, and this is the first item to be restored...
-    if (firstRestoredItem==true) and (transaction.state=="restored") then
+    if firstRestoredItem==true and transaction.state=="restored" then
         logVerbose("[IAP Badger] Recording that this is the FIRST RESTORE item")
         --Add a flag to the transaction event that tells the user
         transaction.firstRestoreCallback=true
@@ -1678,7 +1674,7 @@ public.getTargetStore = getTargetStore
 --is buying on iOS through iTunes Connect, or life_purchase on Google.
 local function getProductIdentifierFromName(productName)
     if catalogue and catalogue.products then
-        if (onSimulator) then
+        if onSimulator then
             return catalogue.products[productName].productNames[debugStore]
         else
             return catalogue.products[productName].productNames[targetStore]
@@ -1736,7 +1732,7 @@ restore=function(emptyFlag, postRestoreListener, timeoutFunction, cancelTime)
     postRestoreCallbackListener = postRestoreListener
 
     --Remove all non-consumable items from inventory - these will be restored by the relevant App Store
-    if (emptyFlag==true) then emptyInventoryOfNonConsumableItems() end
+    if emptyFlag then emptyInventoryOfNonConsumableItems() end
 
     --If no time passed, use a reasonable time (10s)
     if not cancelTime then cancelTime=10000 end
@@ -1801,14 +1797,14 @@ purchase=function(productList, listener)
     end
 
     --If running on Google IAP, the store may not have been initialised at this point.  If it isn't ready, queue up the purchase for when it is and quit now
-    if ( (targetStore=="google") or ((targetStore=="simulator") and (debugStore=="google")) ) and (storeInitialized==false) then
+    if (targetStore=="google" or (targetStore=="simulator" and debugStore=="google")) and storeInitialized==false then
         logVerbose("[IAP Badger] Google Play not initialised - queuing purchase call")
         --Tell store transaction listener to run a restore when the initialisation is finished
         local item = {
             name="purchase",
             params={ productList=productList, listener=nil }
         }
-        if (listener) then item['params']['listener'] = listener end
+        if listener then item['params']['listener'] = listener end
         initQueue[#initQueue+1]=item
         --Quit now
         logVerbose("[IAP Badger] Leaving purchase")
@@ -1825,7 +1821,7 @@ purchase=function(productList, listener)
     actionType="purchase"
 
     --Convert string parameters into a table with a single element
-    if (type(productList)=="string") then productList={ productList } end
+    if type(productList)=="string" then productList={ productList } end
 
     -------------------------------
     --Handle Amazon separately
@@ -1977,8 +1973,7 @@ local function init(options)
     --Get a copy of the products table
     catalogue=options.catalogue
     packageName=options.package
-    --Filename
-    if (options.filename) then
+    if options.filename then
         filename=options.filename
     end
 
@@ -2001,7 +1996,7 @@ local function init(options)
     transactionCancelledListener = options.cancelledListener
 
     --Load in inventory
-    if (options.doNotLoadInventory==true) then
+    if options.doNotLoadInventory then
         inventory={}
     else
         loadInventory()
@@ -2065,7 +2060,7 @@ local function init(options)
         --Switch to the amazon plug in
         store=require("plugin.amazon.iap")
         store.init(storeTransactionCallback)
-        if (store.isActive) then storeAvailable=true end
+        if store.isActive then storeAvailable=true end
         storeInitialized = true
     end
 
@@ -2079,7 +2074,7 @@ local function init(options)
         logVerbose ("[IAP Badger] Simulating target store: " .. debugStore)
         storeName = storeNames[targetStore]
         --If debug store is google, create a delay before completing initialisation to simulate asynchronous store.init on real device
-        if (debugStore=="google") then
+        if debugStore=="google" then
             storeInitialized = false
             initQueue = {}
             --Simulate device delay between starting init request and Google completing
