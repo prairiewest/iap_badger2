@@ -648,7 +648,7 @@ local function saveInventory(asString)
     local refactoredInventory = createRefactoredInventory()
     --Save contents
     if asString then
-        reurn saveToString(refactoredInventory)
+        return saveToString(refactoredInventory)
     else
         saveTable(refactoredInventory, filename)
     end
