@@ -712,10 +712,10 @@ public.getInventoryValue = getInventoryValue
 
 --Returns true if the item is in the inventory
 local function isInInventory(productName)
-    if inventory == nil then
-        return false
+    if inventory and inventory[productName] then
+        return inventory[productName]
     end
-    return inventory[productName]
+    return false
 end
 public.isInInventory = isInInventory
 
