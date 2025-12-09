@@ -427,7 +427,7 @@ local function loadTable(filename, location)
 end
 
 local function changeDefaultSaveLocation(path)
-    if not location then
+    if not path then
         print("[IAP Badger] ERROR Attempted to change the default save location to an invalid path")
     else
         DefaultLocation = path
